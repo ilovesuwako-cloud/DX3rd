@@ -1,1 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ダブルクロス3rd 経験点コスパ計算機</title>
+<style>
+  :root{
+    --bg:#0c0b0f; --bg2:#131218; --surface:#17161d; --surface2:#1e1d26;
+    --border:#2a2833; --border2:#3a3846;
+    --text:#e8e6ee; --text2:#9b97a8; --text3:#6a6678;
+    --accent:#e23b4a; --accent-dim:#a32d2d; --accent-glow:rgba(226,59,74,.18);
+    --cyan:#3fd2c7; --gold:#d8a64e;
+    --radius:7px; --radius-lg:11px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(226,59,74,.10), transparent 60%),
+      radial-gradient(700px 500px at 0% 110%, rgba(63,210,199,.06), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    line-height:1.6; padding:28px 16px 40px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:720px; margin:0 auto;}
+  .titlebar{display:flex; align-items:baseline; gap:12px; margin:0 0 4px;}
+  h1{
+    font-size:21px; font-weight:600; margin:0; letter-spacing:.04em;
+    color:#fff;
+  }
+  h1 .accent{color:var(--accent); font-weight:600;}
+  .kicker{
+    font-size:10px; letter-spacing:.32em; text-transform:uppercase;
+    color:var(--accent); font-weight:600; margin:0 0 6px; opacity:.9;
+  }
+  .lead{font-size:12.5px; color:var(--text2); margin:0 0 22px; max-width:560px;}
+  .card{
+    background:linear-gradient(180deg, var(--surface), var(--bg2));
+    border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:16px 18px; margin-bottom:13px; position:relative;
+  }
+  .card::before{
+    content:""; position:absolute; left:0; top:14px; bottom:14px; width:2px;
+    background:var(--accent); border-radius:2px; opacity:.65;
+  }
+  .ch{
+    font-size:12px; font-weight:600; margin:0 0 13px; padding-left:6px;
+    display:flex; align-items:center; gap:9px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text);
+  }
+  .ch .ico{font-size:15px; color:var(--accent); filter:drop-shadow(0 0 6px var(--accent-glow));}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(95px,1fr)); gap:10px;}
+  .field label{display:block; font-size:10px; letter-spacing:.06em; color:var(--text3); margin:0 0 5px; text-transform:uppercase;}
+  input[type=number],select{
+    width:100%; height:38px; padding:0 11px; font-size:14px; font-family:inherit; font-weight:500;
+    background:var(--bg); border:1px solid var(--border2); border-radius:var(--radius); color:var(--text);
+    transition:border-color .15s, box-shadow .15s;
+  }
+  select{appearance:none; -webkit-appearance:none; cursor:pointer;
+    background-image:linear-gradient(45deg,transparent 50%,var(--text3) 50%),linear-gradient(135deg,var(--text3) 50%,transparent 50%);
+    background-position:calc(100% - 16px) 16px,calc(100% - 11px) 16px; background-size:5px 5px,5px 5px; background-repeat:no-repeat;}
+  input[type=number]:focus,select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow);}
+  .skill-row{display:flex; gap:18px; align-items:end; flex-wrap:wrap;}
+  .chk{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text2); cursor:pointer;}
+  .chk input{width:16px; height:16px; accent-color:var(--accent); cursor:pointer;}
+  .eff{
+    background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);
+    padding:11px 12px; margin-bottom:9px;
+  }
+  .eff-top{display:flex; align-items:center; gap:11px; margin-bottom:10px;}
+  .eff-idx{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:600;}
+  .eff-grid{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; align-items:end;}
+  .eff-grid label{display:block; font-size:10px; letter-spacing:.04em; color:var(--text3); margin:0 0 5px; text-transform:uppercase;}
+  .note{font-size:11.5px; color:var(--text3); margin:11px 0 0; line-height:1.7; padding-left:6px;}
+  .run{
+    width:100%; height:46px; font-size:14px; font-weight:600; font-family:inherit;
+    letter-spacing:.12em; text-transform:uppercase;
+    background:linear-gradient(180deg, var(--accent), var(--accent-dim));
+    color:#fff; border:none; border-radius:var(--radius); cursor:pointer; margin-top:4px;
+    box-shadow:0 0 0 1px rgba(226,59,74,.4), 0 6px 20px -6px var(--accent-glow);
+    transition:transform .1s, box-shadow .2s;
+  }
+  .run:hover{box-shadow:0 0 0 1px rgba(226,59,74,.6), 0 8px 26px -6px rgba(226,59,74,.5);}
+  .run:active{transform:scale(.99);}
+  .metric{
+    background:linear-gradient(135deg, var(--surface2), var(--bg2));
+    border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px 16px; margin:20px 0 16px; position:relative; overflow:hidden;
+  }
+  .metric::after{
+    content:""; position:absolute; right:-30px; top:-30px; width:120px; height:120px;
+    background:radial-gradient(circle, var(--accent-glow), transparent 70%);
+  }
+  .metric .l{font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--text3); margin:0 0 3px;}
+  .metric .v{font-size:26px; font-weight:700; margin:0; color:#fff; letter-spacing:.01em;}
+  .metric .v::after{content:" pt"; font-size:13px; font-weight:400; color:var(--text3);}
+  table{width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed;}
+  thead th{
+    font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--text3); font-weight:600;
+    text-align:right; padding:8px 5px; border-bottom:1px solid var(--border2);
+  }
+  th:first-child,td:first-child{text-align:center; width:30px;}
+  th:nth-child(2),td:nth-child(2){text-align:left; width:auto;}
+  th:nth-child(3),td:nth-child(3),th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5){width:62px;}
+  tbody td{padding:10px 5px; text-align:right; border-bottom:1px solid var(--border); vertical-align:top; color:var(--text2);}
+  tbody tr td:nth-child(4),tbody tr td:nth-child(5){color:var(--text);}
+  tr.top td{background:linear-gradient(90deg, var(--accent-glow), transparent 80%);}
+  tr.top td:nth-child(5){color:var(--accent); font-weight:700;}
+  .rank-no{font-size:14px; font-weight:700; color:var(--text3);}
+  tr.top .rank-no{color:var(--accent);}
+  .nm{font-weight:600; color:var(--text);}
+  .sub{font-size:10.5px; color:var(--text3); display:block; margin-top:2px;}
+  .tag{display:inline-block; font-size:9px; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:4px; margin-left:7px; vertical-align:1px; font-weight:600;}
+  .tag.skill{background:rgba(63,210,199,.14); color:var(--cyan); border:1px solid rgba(63,210,199,.3);}
+  .tag.ef{background:rgba(216,166,78,.14); color:var(--gold); border:1px solid rgba(216,166,78,.3);}
+  .hidden{display:none;}
+  .foot{text-align:center; margin-top:26px; color:var(--text3); font-size:10.5px; line-height:1.8; letter-spacing:.02em;}
+  @media (max-width:560px){ .eff-grid{grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kicker">Renegade Build Optimizer</p>
+  <div class="titlebar">
+    <h1>ダブルクロス3rd <span class="accent">経験点コスパ計算機</span></h1>
+  </div>
+  <p class="lead">攻撃技能のレベルアップとエフェクト育成を、ダメージ期待値の伸びと経験点コストで比較。どこに経験点を注ぐのが最も火力に化けるかを可視化します。</p>
+
+  <div class="card">
+    <p class="ch"><span class="ico">&#9678;</span>現在のコンボ</p>
+    <div class="grid">
+      <div class="field"><label>ダイス数</label><input type="number" id="b-dice" value="0" min="1" max="30" step="1"></div>
+      <div class="field"><label>達成値</label><input type="number" id="b-mod" value="0" step="1"></div>
+      <div class="field"><label>攻撃力</label><input type="number" id="b-atk" value="0" step="1"></div>
+      <div class="field"><label>クリティカル値</label><input type="number" id="b-crit" value="10" min="2" max="10" step="1"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="ch"><span class="ico">&#9876;</span>攻撃技能</p>
+    <div class="skill-row">
+      <div class="field" style="width:130px;"><label>現在の技能Lv</label><input type="number" id="s-lv" value="0" min="0" max="20" step="1"></div>
+      <label class="chk" style="padding-bottom:9px;"><input type="checkbox" id="s-drive">攻撃技能は〈運転〉</label>
+    </div>
+    <p class="note">技能はLv+1で達成値+1。経験点は階段式（運転以外〜Lv6が2点・Lv7〜3点・Lv12〜5点／運転は最初の区間1点）。エフェクト最上位を上回る最後の段までを1行にまとめて表示します。</p>
+  </div>
+
+  <div class="card">
+    <p class="ch"><span class="ico">&#9889;</span>候補エフェクト</p>
+    <div id="effRows"></div>
+    <p class="note">種類・Lvあたりの数値・現在Lv・最大Lvを入力。新規取得にチェックでLv1取得ぶん15点を加算（以降1段5点）。伸びは現在Lv→最大Lvの成長ぶんで計算。クリティカルはLvあたり下がる量を正の数で。</p>
+  </div>
+
+  <button class="run" id="runBtn">&#9860;&ensp;経験点コスパを計算する</button>
+
+  <div id="result" class="hidden" style="margin-top:14px;">
+    <div class="metric"><p class="l">現状のダメージ期待値</p><p class="v" id="m-exp">—</p></div>
+    <table>
+      <thead><tr><th>#</th><th>選択肢</th><th>経験点</th><th>伸び</th><th>経験点<br>コスパ</th></tr></thead>
+      <tbody id="rankBody"></tbody>
+    </table>
+    <p class="note" id="rankNote"></p>
+  </div>
+
+  <p class="foot">
+    ダメージ期待値は12万回のモンテカルロ法で算出。命中は考慮しません。<br>
+    本ツールは「ダブルクロス The 3rd Edition」（矢野俊策／F.E.A.R.／KADOKAWA）の非公式ファンツールです。
+  </p>
+</div>
+<script>
+(function(){
+  var TYPES=[["dice","ダイス +"],["mod","達成値 +"],["atk","攻撃力 +"],["crit","クリティカル -"]];
+  var rowsEl=document.getElementById("effRows");
+  function lvOpts(sel){var o="";for(var l=1;l<=10;l++)o+='<option value="'+l+'"'+(l===sel?" selected":"")+'>Lv'+l+'</option>';return o;}
+  for(var i=0;i<4;i++){
+    var div=document.createElement("div");
+    div.className="eff";
+    var topts=TYPES.map(function(t){return '<option value="'+t[0]+'">'+t[1].replace(" +","")+'</option>';}).join("");
+    div.innerHTML=
+      '<div class="eff-top"><span class="eff-idx">エフェクト '+(i+1)+'</span>'+
+        '<label class="chk"><input type="checkbox" data-k="new" data-i="'+i+'">新規取得（+15点）</label></div>'+
+      '<div class="eff-grid">'+
+        '<div><label>種類</label><select data-k="type" data-i="'+i+'">'+topts+'</select></div>'+
+        '<div><label>Lvあたり</label><input type="number" data-k="per" data-i="'+i+'" value="0" step="1" min="0"></div>'+
+        '<div><label>現在Lv</label><select data-k="cur" data-i="'+i+'">'+lvOpts(1)+'</select></div>'+
+        '<div><label>最大Lv</label><select data-k="max" data-i="'+i+'">'+lvOpts(3)+'</select></div>'+
+        '<div><label>侵蝕値</label><input type="number" data-k="hp" data-i="'+i+'" value="0" step="1" min="0"></div>'+
+      '</div>';
+    rowsEl.appendChild(div);
+  }
+
+  function rollAch(n,crit){
+    var dice=n,tens=0,g=0;
+    while(true){g++;if(g>300)return tens*10+10;
+      var c=0,mx=0;
+      for(var i=0;i<dice;i++){var r=1+Math.floor(Math.random()*10);if(r>mx)mx=r;if(r>=crit)c++;}
+      if(c===0)return tens*10+mx;
+      tens++;dice=c;}
+  }
+  function simDmg(n,crit,mod,atk,trials){
+    if(n<1)n=1;if(crit<2)crit=2;if(crit>10)crit=10;
+    var sum=0;
+    for(var i=0;i<trials;i++){
+      var ach=rollAch(n,crit)+mod;var tens=Math.floor(ach/10);if(tens<0)tens=0;
+      var dmg=atk,cnt=tens+1;
+      for(var d=0;d<cnt;d++)dmg+=1+Math.floor(Math.random()*10);
+      sum+=dmg;
+    }
+    return sum/trials;
+  }
+  function stepCost(curLv,isDrive){if(curLv<=5)return isDrive?1:2;if(curLv<=10)return 3;return 5;}
+  function skillCum(startLv,plus,isDrive){var c=0;for(var k=0;k<plus;k++)c+=stepCost(startLv+k,isDrive);return c;}
+
+  function gather(){return{
+    dice:+document.getElementById("b-dice").value,mod:+document.getElementById("b-mod").value,
+    atk:+document.getElementById("b-atk").value,crit:+document.getElementById("b-crit").value};}
+  var LABEL={dice:"ダイス +",mod:"達成値 +",atk:"攻撃力 +",crit:"クリティカル -"};
+
+  document.getElementById("runBtn").onclick=function(){
+    var b=gather();var TR=120000;
+    var base=simDmg(b.dice,b.crit,b.mod,b.atk,TR);
+    document.getElementById("m-exp").textContent=base.toFixed(1);
+
+    var effCands=[];
+    for(var i=0;i<4;i++){
+      var per=+document.querySelector('[data-k="per"][data-i="'+i+'"]').value;
+      if(!per||per<=0)continue;
+      var type=document.querySelector('[data-k="type"][data-i="'+i+'"]').value;
+      var isNew=document.querySelector('[data-k="new"][data-i="'+i+'"]').checked;
+      var curLv=+document.querySelector('[data-k="cur"][data-i="'+i+'"]').value;
+      var maxLv=+document.querySelector('[data-k="max"][data-i="'+i+'"]').value;
+      var hp=+document.querySelector('[data-k="hp"][data-i="'+i+'"]').value;
+      var startLv=isNew?0:curLv;
+      var steps=maxLv-startLv;
+      if(steps<=0)continue;
+      var amt=per*steps;
+      var cost=isNew?(15+5*(maxLv-1)):(5*steps);
+      var cc={dice:b.dice,mod:b.mod,atk:b.atk,crit:b.crit};
+      if(type==="dice")cc.dice+=amt;else if(type==="mod")cc.mod+=amt;
+      else if(type==="atk")cc.atk+=amt;else if(type==="crit")cc.crit-=amt;
+      var e=simDmg(cc.dice,cc.crit,cc.mod,cc.atk,TR);
+      var delta=e-base;
+      effCands.push({kind:"eff",
+        name:LABEL[type]+amt,
+        sub:(isNew?"新規→Lv"+maxLv:"Lv"+curLv+"→Lv"+maxLv)+"・侵蝕"+hp,
+        exp:cost,hp:hp>0?hp:null,delta:delta,cpe:cost>0?delta/cost:0,
+        fuel:hp>0?delta/hp:null});
+    }
+
+    var curLv=+document.getElementById("s-lv").value;
+    var isDrive=document.getElementById("s-drive").checked;
+    var skillSteps=[];
+    for(var p=1;p<=10;p++){
+      var e=simDmg(b.dice,b.crit,b.mod+p,b.atk,TR);
+      var cost=skillCum(curLv,p,isDrive);
+      var delta=e-base;
+      skillSteps.push({p:p,exp:cost,delta:delta,cpe:cost>0?delta/cost:0});
+    }
+    var topEffCpe=effCands.length?Math.max.apply(null,effCands.map(function(x){return x.cpe;})):null;
+    var pick=null;
+    skillSteps.forEach(function(s){if(topEffCpe===null||s.cpe>topEffCpe){if(pick===null||s.p>pick.p)pick=s;}});
+    if(pick===null)pick=skillSteps.reduce(function(a,b){return b.cpe>a.cpe?b:a;});
+    var skillRow={kind:"skill",
+      name:"技能 +"+pick.p,
+      sub:"Lv"+curLv+"→Lv"+(curLv+pick.p)+(isDrive?"（運転）":""),
+      exp:pick.exp,hp:null,delta:pick.delta,cpe:pick.cpe,fuel:null,
+      span:(topEffCpe!==null&&pick.cpe>topEffCpe)};
+
+    var all=effCands.concat([skillRow]);
+    all.sort(function(a,b){return b.cpe-a.cpe;});
+
+    var body=document.getElementById("rankBody");
+    body.innerHTML=all.map(function(x,idx){
+      var dStr=(x.delta>=0?"+":"")+x.delta.toFixed(1);
+      var cpeStr=x.cpe.toFixed(2);
+      var fStr=x.fuel==null?"—":x.fuel.toFixed(1);
+      var tag=x.kind==="skill"?'<span class="tag skill">技能</span>':'<span class="tag ef">EF</span>';
+      var sub=x.sub;
+      if(x.kind==="skill"&&x.span)sub="ここまでエフェクト最上位より高コスパ ／ "+sub;
+      var top=idx===0?" top":"";
+      return '<tr class="'+top+'"><td><span class="rank-no">'+(idx+1)+'</span></td>'+
+        '<td><span class="nm">'+x.name+'</span>'+tag+'<br><span class="sub">'+sub+'</span></td>'+
+        '<td>'+x.exp+'</td><td style="font-weight:500;">'+dStr+'</td>'+
+        '<td style="font-weight:500;">'+cpeStr+'</td><td>'+fStr+'</td></tr>';
+    }).join("");
+
+    var best=all[0];
+    var note="経験点コスパ（伸び÷経験点）の最上位は「"+best.name+"」で "+best.cpe.toFixed(2)+"。";
+    note+=" 評価はダメージ期待値の伸びのみ（命中は考慮しません）。達成値は十の位を繰り上げてダメージダイスを増やす範囲で効きます。";
+    note+=" 技能行はエフェクト最上位を上回る最後の段をまとめて表示。";
+    document.getElementById("rankNote").textContent=note;
+    document.getElementById("result").classList.remove("hidden");
+  };
+})();
+</script>
+</body>
+</html>
 
