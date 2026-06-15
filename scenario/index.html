@@ -1,1 +1,414 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シナリオHTMLメーカー</title>
+<style>
+/* ===== Theme tokens (simple two-tone) ===== */
+:root[data-theme="dark"]{
+  --bg:#14161c; --panel:#1d2029; --panel2:#262a35; --ink:#e7e9ee;
+  --muted:#9aa0ad; --accent:#7c93ff; --accent2:#5468d4; --gold:#c9a86a;
+  --border:#2e323d; --gm:#23222e; --gm-border:#7c93ff; --danger:#c75d72;
+  --code-bg:#0f1116;
+}
+:root[data-theme="light"]{
+  --bg:#f6f6f4; --panel:#ffffff; --panel2:#eef0f3; --ink:#1f2228;
+  --muted:#6a7080; --accent:#4856c8; --accent2:#5468d4; --gold:#9a7b30;
+  --border:#dcdee4; --gm:#f0f1f8; --gm-border:#5468d4; --danger:#c0445e;
+  --code-bg:#eef0f3;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+  line-height:1.7; font-size:15px; transition:background .2s,color .2s;
+}
+.app{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); height:100vh;}
+.col{overflow-y:auto; padding:1.2rem 1.3rem 5rem;}
+.col.edit{border-right:1px solid var(--border); background:var(--panel);}
 
+.topbar{display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.4rem;}
+h1.tool{font-size:1.2rem; color:var(--accent); margin:0; letter-spacing:.03em;}
+.sub{color:var(--muted); font-size:0.82rem; margin:0 0 1.2rem;}
+
+/* theme toggle */
+.theme-toggle{
+  background:var(--panel2); color:var(--ink); border:1px solid var(--border);
+  border-radius:20px; padding:0.35rem 0.8rem; cursor:pointer; font-family:inherit;
+  font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; white-space:nowrap;
+}
+.theme-toggle:hover{border-color:var(--accent2);}
+
+label{display:block; font-size:0.8rem; color:var(--gold); margin:0 0 0.3rem; font-weight:700;}
+input[type=text], textarea{
+  width:100%; background:var(--bg); color:var(--ink);
+  border:1px solid var(--border); border-radius:6px; padding:0.55rem 0.7rem;
+  font-family:inherit; font-size:0.92rem; line-height:1.6; resize:vertical;
+}
+input[type=text]:focus, textarea:focus{outline:none; border-color:var(--accent2);}
+.field{margin-bottom:1rem;}
+
+.sec-card{
+  background:var(--panel2); border:1px solid var(--border);
+  border-radius:8px; padding:0.9rem; margin-bottom:0.9rem; border-left:4px solid var(--accent2);
+}
+.sec-head{display:flex; align-items:center; gap:0.5rem; margin-bottom:0.7rem;}
+.sec-head .num{background:var(--accent2); color:#fff; font-size:0.72rem; font-weight:700; border-radius:4px; padding:0.1rem 0.45rem; white-space:nowrap;}
+.sec-head select{background:var(--bg); color:var(--ink); border:1px solid var(--border); border-radius:5px; padding:0.3rem 0.4rem; font-family:inherit; font-size:0.8rem;}
+.sec-head .grow{flex:1;}
+.icon-btn{background:var(--bg); color:var(--muted); border:1px solid var(--border); border-radius:5px; width:30px; height:30px; cursor:pointer; font-size:0.95rem; display:inline-flex; align-items:center; justify-content:center;}
+.icon-btn:hover{color:var(--ink); border-color:var(--accent2);}
+.icon-btn.del:hover{color:#fff; background:var(--danger); border-color:var(--danger);}
+textarea.body{min-height:90px;}
+
+.toolbar{display:flex; flex-wrap:wrap; gap:0.5rem; margin:1rem 0 0.4rem;}
+.btn{border:none; border-radius:7px; padding:0.6rem 1rem; cursor:pointer; font-family:inherit; font-size:0.9rem; font-weight:700;}
+.btn.add{background:var(--panel2); color:var(--accent); border:1px solid var(--accent2);}
+.btn.add:hover{background:var(--bg);}
+.btn.primary{background:var(--accent2); color:#fff;}
+.btn.primary:hover{filter:brightness(1.1);}
+.btn.ghost{background:transparent; color:var(--muted); border:1px solid var(--border);}
+.btn.ghost:hover{color:var(--ink);}
+
+details.guide{margin:1rem 0; background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:0.3rem 0.8rem;}
+details.guide summary{cursor:pointer; color:var(--gold); font-weight:700; padding:0.5rem 0; font-size:0.85rem;}
+.guide table{width:100%; border-collapse:collapse; font-size:0.8rem; margin:0.4rem 0 0.8rem;}
+.guide td{border:1px solid var(--border); padding:0.35rem 0.5rem; vertical-align:top;}
+.guide code{background:var(--code-bg); color:var(--accent); padding:0.1rem 0.35rem; border-radius:4px; font-size:0.82rem; white-space:nowrap;}
+
+.preview-note{color:var(--muted); font-size:0.78rem; margin:0 0 0.8rem; padding-bottom:0.6rem; border-bottom:1px solid var(--border);}
+
+/* ===== Preview (mirror of output) ===== */
+.pv h1{font-size:1.55rem; margin:2rem 0 0.9rem; padding:0.7rem 1rem; color:var(--accent); border-left:4px solid var(--accent2); background:var(--panel2); letter-spacing:.03em;}
+.pv h1:first-child{margin-top:0;}
+.pv h2{font-size:1.2rem; margin:1.8rem 0 0.8rem; color:var(--gold); border-bottom:1px solid var(--border); padding-bottom:0.3rem;}
+.pv h3{font-size:1.05rem; margin:1.3rem 0 0.5rem; color:var(--accent);}
+.pv h4{font-size:0.98rem; margin:1rem 0 0.4rem; color:var(--muted);}
+.pv p{margin:0.6rem 0;}
+.pv strong{color:var(--ink); font-weight:700;}
+.pv em{color:var(--accent); font-style:italic;}
+.pv ul{margin:0.6rem 0; padding-left:1.4rem;}
+.pv li{margin:0.3rem 0;}
+.pv .flavor{color:var(--accent); font-style:italic; text-align:center; margin:1.2rem auto; padding:0.5rem 1rem; border-top:1px solid var(--border); border-bottom:1px solid var(--border); white-space:pre-line;}
+.pv .dialogue{margin:0.6rem 0; padding:0.5rem 0.9rem; background:var(--panel2); border-left:3px solid var(--accent2); border-radius:4px;}
+.pv .dialogue .speaker{color:var(--accent); font-weight:700;}
+.pv .gm{margin:0.8rem 0; padding:0.6rem 0.9rem; background:var(--gm); border-left:3px solid var(--gm-border); border-radius:4px; font-size:0.92rem;}
+.pv .gm .speaker{color:var(--gm-border); font-weight:700;}
+.pv table{width:100%; border-collapse:collapse; margin:1rem 0; font-size:0.88rem; background:var(--panel2); border-radius:6px; overflow:hidden;}
+.pv th,.pv td{border:1px solid var(--border); padding:0.5rem 0.7rem; text-align:left; vertical-align:top;}
+.pv th{background:var(--accent2); color:#fff; font-weight:700;}
+.pv tr:nth-child(even) td{background:var(--panel);}
+
+.empty{color:var(--muted); font-style:italic; padding:2rem 0; text-align:center;}
+
+@media (max-width:840px){
+  .app{grid-template-columns:1fr; height:auto;}
+  .col{height:auto; overflow:visible;}
+  .col.edit{border-right:none; border-bottom:1px solid var(--border);}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== EDITOR ===== -->
+  <div class="col edit">
+    <div class="topbar">
+      <h1 class="tool">シナリオHTMLメーカー</h1>
+      <button class="theme-toggle" id="editorTheme" onclick="toggleEditorTheme()">🌙 ダーク</button>
+    </div>
+    <p class="sub">タイトルとセクションを入力 →「HTMLを生成してダウンロード」で、目次ナビ＋モード切替つきの完成HTMLが保存されます。</p>
+
+    <div class="field">
+      <label>シナリオタイトル</label>
+      <input type="text" id="title" placeholder="例：シナリオのタイトル" oninput="render()">
+    </div>
+    <div class="field">
+      <label>サブタイトル（任意）</label>
+      <input type="text" id="subtitle" placeholder="例：システム名・全○話 など" oninput="render()">
+    </div>
+
+    <details class="guide">
+      <summary>📖 本文の記法ガイド（クリックで開く）</summary>
+      <table>
+        <tr><td><code>## 小見出し</code></td><td>本文中の中見出し（h2）</td></tr>
+        <tr><td><code>### 小々見出し</code></td><td>シーン名など（h3）</td></tr>
+        <tr><td><code>- 項目</code></td><td>箇条書き（行頭）</td></tr>
+        <tr><td><code>**太字**</code></td><td>強調</td></tr>
+        <tr><td><code>*斜体*</code></td><td>斜体（演出色）</td></tr>
+        <tr><td><code>【GM】 内容</code></td><td>GMノート枠（行頭）</td></tr>
+        <tr><td><code>【名前】 セリフ</code></td><td>NPC台詞枠（行頭）</td></tr>
+        <tr><td><code>&gt; 演出文</code></td><td>中央寄せの斜体トレーラー枠</td></tr>
+        <tr><td><code>| A | B |</code><br><code>| --- | --- |</code><br><code>| 1 | 2 |</code></td><td>表（行ごとに <code>|</code> 区切り。2行目は区切り線）</td></tr>
+      </table>
+    </details>
+
+    <div id="sections"></div>
+
+    <div class="toolbar">
+      <button class="btn add" onclick="addSection('h1')">＋ 大見出し（章）</button>
+      <button class="btn add" onclick="addSection('h2')">＋ 中見出し（節）</button>
+    </div>
+    <div class="toolbar">
+      <button class="btn primary" onclick="downloadHTML()">⬇ HTMLを生成してダウンロード</button>
+      <button class="btn ghost" onclick="saveDraft()">下書き保存</button>
+      <button class="btn ghost" onclick="loadSample()">サンプル読込</button>
+    </div>
+  </div>
+
+  <!-- ===== PREVIEW ===== -->
+  <div class="col">
+    <p class="preview-note">プレビュー（生成されるHTMLとほぼ同じ表示です）</p>
+    <div class="pv" id="preview"></div>
+  </div>
+
+</div>
+
+<script>
+/* ---------- State ---------- */
+let sections = [];
+let uid = 1;
+
+/* ---------- Theme (editor) ---------- */
+function toggleEditorTheme(){
+  const r=document.documentElement;
+  const next = r.getAttribute('data-theme')==='dark' ? 'light':'dark';
+  r.setAttribute('data-theme',next);
+  document.getElementById('editorTheme').textContent = next==='dark' ? '🌙 ダーク' : '☀ ライト';
+}
+
+/* ---------- Helpers ---------- */
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function inlineMd(t){
+  t = esc(t);
+  t = t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t = t.replace(/(^|[^*])\*([^*]+?)\*(?!\*)/g,'$1<em>$2</em>');
+  return t;
+}
+function parseBody(text){
+  const lines = text.replace(/\r/g,'').split('\n');
+  const out=[]; let i=0;
+  const isSep = c => c.every(x => x==='' || /^:?-{2,}:?$/.test(x));
+  while(i<lines.length){
+    const s=lines[i].trim();
+    if(s===''){ i++; continue; }
+    if(s.startsWith('|')){
+      const tbl=[]; while(i<lines.length && lines[i].trim().startsWith('|')){ tbl.push(lines[i].trim()); i++; }
+      const rows=tbl.map(r=>r.replace(/^\|/,'').replace(/\|$/,'').split('|').map(c=>c.trim()));
+      let h=''; rows.forEach((cells,idx)=>{ if(isSep(cells))return;
+        const hd=idx+1<rows.length&&isSep(rows[idx+1]); const tag=hd?'th':'td';
+        h+='<tr>'+cells.map(c=>`<${tag}>${inlineMd(c)}</${tag}>`).join('')+'</tr>';});
+      out.push('<table>'+h+'</table>'); continue;
+    }
+    let m=s.match(/^(#{2,4})\s+(.*)$/);
+    if(m){ const lv=m[1].length; out.push(`<h${lv}>${inlineMd(m[2])}</h${lv}>`); i++; continue; }
+    if(s.startsWith('- ')){
+      const items=[]; while(i<lines.length && lines[i].trim().startsWith('- ')){ items.push(lines[i].trim().slice(2)); i++; }
+      out.push('<ul>'+items.map(it=>`<li>${inlineMd(it)}</li>`).join('')+'</ul>'); continue;
+    }
+    if(s.startsWith('>')){
+      const buf=[]; while(i<lines.length && lines[i].trim().startsWith('>')){ buf.push(lines[i].trim().replace(/^>\s?/,'')); i++; }
+      out.push(`<p class="flavor"><em>${buf.map(inlineMd).join('\n')}</em></p>`); continue;
+    }
+    let d=s.match(/^【(.+?)】\s*(.*)$/);
+    if(d){ const sp=d[1],rest=d[2]; const cls=sp==='GM'?'gm':'dialogue';
+      out.push(`<p class="${cls}"><span class="speaker">【${esc(sp)}】</span> ${inlineMd(rest)}</p>`); i++; continue; }
+    out.push(`<p>${inlineMd(s)}</p>`); i++;
+  }
+  return out.join('\n');
+}
+
+/* ---------- Editor UI ---------- */
+function addSection(level){ sections.push({id:uid++,level,heading:'',body:''}); render(); renderEditor();
+  setTimeout(()=>{const el=document.querySelector(`#sec-${uid-1} .heading`); if(el) el.focus();},0); }
+function removeSection(id){ sections=sections.filter(s=>s.id!==id); render(); renderEditor(); }
+function moveSection(id,dir){ const i=sections.findIndex(s=>s.id===id),j=i+dir;
+  if(j<0||j>=sections.length)return; [sections[i],sections[j]]=[sections[j],sections[i]]; render(); renderEditor(); }
+function updateField(id,key,val){ const s=sections.find(x=>x.id===id); if(s){s[key]=val; render();} }
+
+function renderEditor(){
+  const root=document.getElementById('sections');
+  if(sections.length===0){ root.innerHTML='<div class="empty">セクションがありません。下のボタンで追加してください。</div>'; return; }
+  root.innerHTML='';
+  sections.forEach((s,idx)=>{
+    const card=document.createElement('div');
+    card.className='sec-card'; card.id='sec-'+s.id;
+    card.style.borderLeftColor = s.level==='h1' ? 'var(--gold)' : 'var(--accent2)';
+    card.innerHTML=`
+      <div class="sec-head">
+        <span class="num">${idx+1}</span>
+        <select onchange="updateField(${s.id},'level',this.value)">
+          <option value="h1"${s.level==='h1'?' selected':''}>大見出し</option>
+          <option value="h2"${s.level==='h2'?' selected':''}>中見出し</option>
+        </select>
+        <input class="heading grow" type="text" placeholder="見出し（ナビに表示）"
+          value="${s.heading.replace(/"/g,'&quot;')}" oninput="updateField(${s.id},'heading',this.value)">
+        <button class="icon-btn" title="上へ" onclick="moveSection(${s.id},-1)">↑</button>
+        <button class="icon-btn" title="下へ" onclick="moveSection(${s.id},1)">↓</button>
+        <button class="icon-btn del" title="削除" onclick="removeSection(${s.id})">✕</button>
+      </div>
+      <textarea class="body" placeholder="本文（記法ガイド参照）" oninput="updateField(${s.id},'body',this.value)">${s.body.replace(/</g,'&lt;')}</textarea>
+    `;
+    root.appendChild(card);
+  });
+}
+
+/* ---------- Preview + build ---------- */
+function buildBodyHTML(){
+  let hid=0; const toc=[]; const parts=[];
+  sections.forEach(s=>{
+    const lv=s.level==='h1'?1:2; const head=s.heading||'（無題）';
+    hid++; const anchor='sec'+hid;
+    toc.push({lv,anchor,text:head});
+    parts.push(`<h${lv} id="${anchor}">${inlineMd(head)}</h${lv}>`);
+    if(s.body.trim()) parts.push(parseBody(s.body));
+  });
+  return {body:parts.join('\n'), toc};
+}
+function render(){
+  const {body}=buildBodyHTML();
+  const t=document.getElementById('title').value.trim();
+  const st=document.getElementById('subtitle').value.trim();
+  let header='';
+  if(t) header+=`<h1>${inlineMd(t)}</h1>`;
+  if(st) header+=`<p class="flavor"><em>${inlineMd(st)}</em></p>`;
+  document.getElementById('preview').innerHTML=(header+body)||'<div class="empty">ここにプレビューが表示されます</div>';
+}
+
+/* ---------- Export standalone HTML (with its own theme toggle) ---------- */
+function fullHTML(){
+  const {body,toc}=buildBodyHTML();
+  const title=document.getElementById('title').value.trim()||'無題シナリオ';
+  const subtitle=document.getElementById('subtitle').value.trim();
+  const navItems=toc.map(it=>{const cls=it.lv===1?'toc-h1':'toc-h2';
+    return `<li class="${cls}"><a href="#${it.anchor}">${esc(it.text)}</a></li>`;}).join('\n');
+  const header=`<h1 class="doc-title">${inlineMd(title)}</h1>`+(subtitle?`<p class="flavor"><em>${inlineMd(subtitle)}</em></p>`:'');
+
+  return `<!DOCTYPE html>
+<html lang="ja" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(title)}</title>
+<style>
+:root[data-theme="dark"]{--bg:#14161c;--panel:#1d2029;--panel2:#262a35;--ink:#e7e9ee;--muted:#9aa0ad;--accent:#7c93ff;--accent2:#5468d4;--gold:#c9a86a;--border:#2e323d;--gm:#23222e;--gm-border:#7c93ff;--nav-bg:#101218;}
+:root[data-theme="light"]{--bg:#f6f6f4;--panel:#ffffff;--panel2:#eef0f3;--ink:#1f2228;--muted:#6a7080;--accent:#4856c8;--accent2:#5468d4;--gold:#9a7b30;--border:#dcdee4;--gm:#f0f1f8;--gm-border:#5468d4;--nav-bg:#eef0f3;}
+:root{--nav-w:280px;}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;line-height:1.85;font-size:16px;transition:background .2s,color .2s;}
+#nav{position:fixed;top:0;left:0;bottom:0;width:var(--nav-w);background:var(--nav-bg);border-right:1px solid var(--border);overflow-y:auto;padding:1.2rem 0.6rem 3rem;z-index:40;}
+#nav .nav-title{color:var(--gold);font-size:0.95rem;font-weight:700;padding:0.4rem 0.9rem 0.9rem;letter-spacing:0.04em;border-bottom:1px solid var(--border);margin-bottom:0.6rem;}
+#nav ul{list-style:none;margin:0;padding:0;}
+#nav a{display:block;text-decoration:none;color:var(--muted);padding:0.32rem 0.9rem;border-radius:5px;font-size:0.88rem;border-left:3px solid transparent;transition:all .15s;}
+#nav a:hover{color:var(--ink);background:var(--panel2);}
+#nav a.active{color:var(--accent);background:var(--panel2);border-left-color:var(--accent2);font-weight:700;}
+#nav .toc-h1>a{color:var(--accent);font-weight:700;font-size:0.95rem;margin-top:0.6rem;}
+#nav .toc-h2>a{padding-left:1.6rem;font-size:0.84rem;}
+.wrap{max-width:860px;margin:0 auto;padding:2rem 1.4rem 6rem;}
+main{margin-left:var(--nav-w);}
+.doc-title{text-align:center;border:none;background:none;}
+h1{font-size:1.9rem;margin:3.5rem 0 1.2rem;padding:0.9rem 1.2rem;color:var(--accent);scroll-margin-top:1rem;border-left:4px solid var(--accent2);background:var(--panel2);letter-spacing:0.03em;}
+h1.doc-title{margin-top:1rem;font-size:2.1rem;background:none;border:none;}
+h2{font-size:1.4rem;margin:2.6rem 0 1rem;color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:0.4rem;scroll-margin-top:1rem;}
+h3{font-size:1.15rem;margin:1.8rem 0 0.7rem;color:var(--accent);}
+h4{font-size:1.02rem;margin:1.3rem 0 0.5rem;color:var(--muted);}
+p{margin:0.7rem 0;}
+strong{color:var(--ink);font-weight:700;}
+em{color:var(--accent);font-style:italic;}
+ul{margin:0.7rem 0;padding-left:1.4rem;}
+li{margin:0.35rem 0;}
+.flavor{color:var(--accent);font-style:italic;text-align:center;margin:1.4rem auto;padding:0.6rem 1rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border);letter-spacing:0.03em;white-space:pre-line;}
+.dialogue{margin:0.7rem 0;padding:0.6rem 1rem;background:var(--panel2);border-left:3px solid var(--accent2);border-radius:4px;}
+.dialogue .speaker{color:var(--accent);font-weight:700;}
+.gm{margin:0.9rem 0;padding:0.7rem 1rem;background:var(--gm);border-left:3px solid var(--gm-border);border-radius:4px;font-size:0.95rem;}
+.gm .speaker{color:var(--gm-border);font-weight:700;}
+table{width:100%;border-collapse:collapse;margin:1.1rem 0;font-size:0.93rem;background:var(--panel2);border-radius:6px;overflow:hidden;}
+th,td{border:1px solid var(--border);padding:0.55rem 0.8rem;text-align:left;vertical-align:top;}
+th{background:var(--accent2);color:#fff;font-weight:700;}
+tr:nth-child(even) td{background:var(--panel);}
+td strong{color:var(--accent);}
+::selection{background:var(--accent2);color:#fff;}
+.fab{position:fixed;z-index:50;border:none;cursor:pointer;border-radius:50%;width:46px;height:46px;font-size:1.1rem;box-shadow:0 4px 14px rgba(0,0,0,0.3);background:var(--accent2);color:#fff;transition:opacity .2s;}
+#theme-btn{right:1.4rem;bottom:5.2rem;}
+#top-btn{right:1.4rem;bottom:1.4rem;opacity:0;pointer-events:none;}
+#top-btn.show{opacity:0.92;pointer-events:auto;}
+#nav-toggle{display:none;position:fixed;top:0.8rem;left:0.8rem;z-index:60;background:var(--accent2);color:#fff;border:none;cursor:pointer;width:44px;height:44px;border-radius:8px;font-size:1.3rem;box-shadow:0 3px 10px rgba(0,0,0,0.3);}
+#nav-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:35;}
+@media (max-width:820px){main{margin-left:0;}#nav-toggle{display:block;}#nav{transform:translateX(-100%);transition:transform .25s;width:82%;max-width:320px;}body.nav-open #nav{transform:translateX(0);}body.nav-open #nav-overlay{display:block;}.wrap{padding-top:4.2rem;}}
+@media (max-width:600px){body{font-size:15px;}h1{font-size:1.5rem;}table{font-size:0.85rem;}th,td{padding:0.4rem 0.5rem;}}
+</style>
+</head>
+<body>
+<button id="nav-toggle" aria-label="目次">☰</button>
+<div id="nav-overlay"></div>
+<nav id="nav">
+  <div class="nav-title">目次</div>
+  <ul>
+${navItems}
+  </ul>
+</nav>
+<main>
+<div class="wrap">
+${header}
+${body}
+</div>
+</main>
+<button class="fab" id="theme-btn" aria-label="表示モード切替" title="表示モード切替">🌙</button>
+<button class="fab" id="top-btn" aria-label="トップへ">↑</button>
+<script>
+(function(){
+  var root=document.documentElement;
+  var nav=document.getElementById('nav'),toggle=document.getElementById('nav-toggle'),overlay=document.getElementById('nav-overlay'),topBtn=document.getElementById('top-btn'),themeBtn=document.getElementById('theme-btn');
+  var links=Array.prototype.slice.call(nav.querySelectorAll('a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));}).filter(Boolean);
+  function closeNav(){document.body.classList.remove('nav-open');}
+  toggle.addEventListener('click',function(){document.body.classList.toggle('nav-open');});
+  overlay.addEventListener('click',closeNav);
+  links.forEach(function(a){a.addEventListener('click',closeNav);});
+  function syncThemeBtn(){themeBtn.textContent = root.getAttribute('data-theme')==='dark' ? '🌙' : '☀';}
+  themeBtn.addEventListener('click',function(){root.setAttribute('data-theme', root.getAttribute('data-theme')==='dark'?'light':'dark');syncThemeBtn();});
+  syncThemeBtn();
+  function spy(){var cur=secs[0],y=window.scrollY+120;for(var k=0;k<secs.length;k++){if(secs[k].offsetTop<=y)cur=secs[k];}links.forEach(function(a){a.classList.toggle('active',cur&&a.getAttribute('href')==='#'+cur.id);});topBtn.classList.toggle('show',window.scrollY>400);}
+  window.addEventListener('scroll',spy,{passive:true});spy();
+  topBtn.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+})();
+<\/script>
+</body>
+</html>`;
+}
+
+function downloadHTML(){
+  if(sections.length===0){ alert('セクションを1つ以上追加してください。'); return; }
+  const html=fullHTML();
+  const title=document.getElementById('title').value.trim()||'シナリオ';
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=title+'.html'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ---------- Draft (session only) ---------- */
+function saveDraft(){
+  window.__draft={title:document.getElementById('title').value,subtitle:document.getElementById('subtitle').value,sections:JSON.parse(JSON.stringify(sections))};
+  alert('このセッション内に下書きを保存しました。\n（ページを閉じると消えます。長期保存はHTMLをダウンロードしてください）');
+}
+
+/* ---------- Generic sample ---------- */
+function loadSample(){
+  document.getElementById('title').value='サンプルシナリオ';
+  document.getElementById('subtitle').value='TRPG / 1話完結';
+  sections=[
+    {id:uid++,level:'h1',heading:'シナリオ概要',body:'| 項目 | 内容 |\n| --- | --- |\n| 推奨人数 | 3〜4人 |\n| プレイ時間 | 約4時間 |\n| 難易度 | 標準 |\n\nここにシナリオの導入や目的を記載します。**重要な語句**は太字で、*雰囲気のある言い回し*は斜体で表現できます。'},
+    {id:uid++,level:'h1',heading:'第1幕：はじまり',body:'> 静かな町に、小さな違和感が漂っている。\n> それが何なのかは、まだ誰も気づいていない。'},
+    {id:uid++,level:'h2',heading:'導入シーン',body:'### シーン1：依頼\n描写：PCたちは依頼人のもとに集められる。\n\n【依頼人】 「お集まりいただき、ありがとうございます。実は、お願いしたいことがあるのです」\n\n【GM】 ここで各PCの動機づけを確認し、調査の方針が決まったらシーンを終了する。\n\n- 聞き込み：難易度の目安は易しめ\n- 現場調査：手がかりは2つ用意しておく'},
+    {id:uid++,level:'h2',heading:'クライマックス',body:'### シーン2：対決\n緊張感のある場面の例です。表やGMノートを使って情報を整理しましょう。\n\n【GM】 PCの選択に応じて結末を分岐させる。'},
+  ];
+  render(); renderEditor();
+}
+
+/* ---------- Init ---------- */
+renderEditor(); render();
+</script>
+</body>
+</html>
