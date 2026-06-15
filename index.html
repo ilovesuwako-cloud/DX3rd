@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ツール一覧</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #1a1d24;
+    --card-hover: #222630;
+    --text: #e8eaed;
+    --sub: #9aa0aa;
+    --accent: #6ea8fe;
+    --border: #2a2f3a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 32px 20px 60px;
+    max-width: 680px;
+    margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+  }
+  header { margin-bottom: 28px; }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .desc {
+    color: var(--sub);
+    font-size: 0.9rem;
+    margin-top: 6px;
+  }
+  ul { list-style: none; }
+  li { margin-bottom: 12px; }
+  a.card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    text-decoration: none;
+    color: var(--text);
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  a.card:active { background: var(--card-hover); transform: scale(0.99); }
+  .card-title { font-size: 1.05rem; font-weight: 600; }
+  .card-sub { font-size: 0.8rem; color: var(--sub); margin-top: 2px; }
+  .arrow { color: var(--accent); font-size: 1.2rem; flex-shrink: 0; margin-left: 12px; }
+  footer {
+    margin-top: 40px;
+    text-align: center;
+    color: var(--sub);
+    font-size: 0.75rem;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>ツール一覧</h1>
+    <p class="desc">TRPG向け各種ツール</p>
+  </header>
+
+  <ul>
+    <li>
+      <a class="card" href="./yuto_ccfolia/">
+        <span>
+          <span class="card-title">ココフォリア駒コンバータ</span>
+          <span class="card-sub">ゆとシートから駒出力</span>
+        </span>
+        <span class="arrow">›</span>
+      </a>
+    </li>
+    <li>
+      <a class="card" href="./exp_optimizer/">
+        <span>
+          <span class="card-title">経験点効率計算機</span>
+          <span class="card-sub">経験点効率を計算</span>
+        </span>
+        <span class="arrow">›</span>
+      </a>
+    </li>
+    <li>
+      <a class="card" href="./buff_calculator/">
+        <span>
+          <span class="card-title">バフ修正変換機</span>
+          <span class="card-sub">バフ修正を計算し出力</span>
+        </span>
+        <span class="arrow">›</span>
+      </a>
+    </li>
+  </ul>
+
+  <footer>GitHub Pages で公開中</footer>
+</body>
+</html>
