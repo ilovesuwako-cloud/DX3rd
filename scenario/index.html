@@ -27,11 +27,11 @@ body{
 .app{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); height:100vh;}
 .col{overflow-y:auto; padding:1.2rem 1.3rem 5rem;}
 .col.edit{border-right:1px solid var(--border); background:var(--panel);}
-
+ 
 .topbar{display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.4rem;}
 h1.tool{font-size:1.2rem; color:var(--accent); margin:0; letter-spacing:.03em;}
 .sub{color:var(--muted); font-size:0.82rem; margin:0 0 1.2rem;}
-
+ 
 /* theme toggle */
 .theme-toggle{
   background:var(--panel2); color:var(--ink); border:1px solid var(--border);
@@ -39,7 +39,7 @@ h1.tool{font-size:1.2rem; color:var(--accent); margin:0; letter-spacing:.03em;}
   font-size:0.8rem; display:inline-flex; align-items:center; gap:0.4rem; white-space:nowrap;
 }
 .theme-toggle:hover{border-color:var(--accent2);}
-
+ 
 label{display:block; font-size:0.8rem; color:var(--gold); margin:0 0 0.3rem; font-weight:700;}
 input[type=text], textarea{
   width:100%; background:var(--bg); color:var(--ink);
@@ -48,7 +48,7 @@ input[type=text], textarea{
 }
 input[type=text]:focus, textarea:focus{outline:none; border-color:var(--accent2);}
 .field{margin-bottom:1rem;}
-
+ 
 .sec-card{
   background:var(--panel2); border:1px solid var(--border);
   border-radius:8px; padding:0.9rem; margin-bottom:0.9rem; border-left:4px solid var(--accent2);
@@ -61,7 +61,7 @@ input[type=text]:focus, textarea:focus{outline:none; border-color:var(--accent2)
 .icon-btn:hover{color:var(--ink); border-color:var(--accent2);}
 .icon-btn.del:hover{color:#fff; background:var(--danger); border-color:var(--danger);}
 textarea.body{min-height:90px;}
-
+ 
 .toolbar{display:flex; flex-wrap:wrap; gap:0.5rem; margin:1rem 0 0.4rem;}
 .btn{border:none; border-radius:7px; padding:0.6rem 1rem; cursor:pointer; font-family:inherit; font-size:0.9rem; font-weight:700;}
 .btn.add{background:var(--panel2); color:var(--accent); border:1px solid var(--accent2);}
@@ -70,15 +70,15 @@ textarea.body{min-height:90px;}
 .btn.primary:hover{filter:brightness(1.1);}
 .btn.ghost{background:transparent; color:var(--muted); border:1px solid var(--border);}
 .btn.ghost:hover{color:var(--ink);}
-
+ 
 details.guide{margin:1rem 0; background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:0.3rem 0.8rem;}
 details.guide summary{cursor:pointer; color:var(--gold); font-weight:700; padding:0.5rem 0; font-size:0.85rem;}
 .guide table{width:100%; border-collapse:collapse; font-size:0.8rem; margin:0.4rem 0 0.8rem;}
 .guide td{border:1px solid var(--border); padding:0.35rem 0.5rem; vertical-align:top;}
 .guide code{background:var(--code-bg); color:var(--accent); padding:0.1rem 0.35rem; border-radius:4px; font-size:0.82rem; white-space:nowrap;}
-
+ 
 .preview-note{color:var(--muted); font-size:0.78rem; margin:0 0 0.8rem; padding-bottom:0.6rem; border-bottom:1px solid var(--border);}
-
+ 
 /* ===== Preview (mirror of output) ===== */
 .pv h1{font-size:1.55rem; margin:2rem 0 0.9rem; padding:0.7rem 1rem; color:var(--accent); border-left:4px solid var(--accent2); background:var(--panel2); letter-spacing:.03em;}
 .pv h1:first-child{margin-top:0;}
@@ -99,9 +99,14 @@ details.guide summary{cursor:pointer; color:var(--gold); font-weight:700; paddin
 .pv th,.pv td{border:1px solid var(--border); padding:0.5rem 0.7rem; text-align:left; vertical-align:top;}
 .pv th{background:var(--accent2); color:#fff; font-weight:700;}
 .pv tr:nth-child(even) td{background:var(--panel);}
-
+.pv .cp-wrap{position:relative;}
+.pv .cp-btn{position:absolute;top:4px;right:4px;z-index:5;border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:5px;font-size:0.7rem;line-height:1;padding:0.22rem 0.42rem;cursor:pointer;opacity:0;transition:opacity .15s;font-family:inherit;}
+.pv .cp-wrap:hover>.cp-btn{opacity:1;}
+.pv .cp-btn:hover{color:var(--ink);border-color:var(--accent2);}
+.pv .cp-btn.done{color:#fff;background:var(--accent2);border-color:var(--accent2);opacity:1;}
+ 
 .empty{color:var(--muted); font-style:italic; padding:2rem 0; text-align:center;}
-
+ 
 @media (max-width:840px){
   .app{grid-template-columns:1fr; height:auto;}
   .col{height:auto; overflow:visible;}
@@ -111,7 +116,7 @@ details.guide summary{cursor:pointer; color:var(--gold); font-weight:700; paddin
 </head>
 <body>
 <div class="app">
-
+ 
   <!-- ===== EDITOR ===== -->
   <div class="col edit">
     <div class="topbar">
@@ -119,7 +124,7 @@ details.guide summary{cursor:pointer; color:var(--gold); font-weight:700; paddin
       <button class="theme-toggle" id="editorTheme" onclick="toggleEditorTheme()">🌙 ダーク</button>
     </div>
     <p class="sub">タイトルとセクションを入力 →「HTMLを生成してダウンロード」で、目次ナビ＋モード切替つきの完成HTMLが保存されます。</p>
-
+ 
     <div class="field">
       <label>シナリオタイトル</label>
       <input type="text" id="title" placeholder="例：シナリオのタイトル" oninput="render()">
@@ -128,7 +133,7 @@ details.guide summary{cursor:pointer; color:var(--gold); font-weight:700; paddin
       <label>サブタイトル（任意）</label>
       <input type="text" id="subtitle" placeholder="例：システム名・全○話 など" oninput="render()">
     </div>
-
+ 
     <details class="guide">
       <summary>📖 本文の記法ガイド（クリックで開く）</summary>
       <table>
@@ -143,9 +148,9 @@ details.guide summary{cursor:pointer; color:var(--gold); font-weight:700; paddin
         <tr><td><code>| A | B |</code><br><code>| --- | --- |</code><br><code>| 1 | 2 |</code></td><td>表（行ごとに <code>|</code> 区切り。2行目は区切り線）</td></tr>
       </table>
     </details>
-
+ 
     <div id="sections"></div>
-
+ 
     <div class="toolbar">
       <button class="btn add" onclick="addSection('h1')">＋ 大見出し（章）</button>
       <button class="btn add" onclick="addSection('h2')">＋ 中見出し（節）</button>
@@ -156,20 +161,20 @@ details.guide summary{cursor:pointer; color:var(--gold); font-weight:700; paddin
       <button class="btn ghost" onclick="loadSample()">サンプル読込</button>
     </div>
   </div>
-
+ 
   <!-- ===== PREVIEW ===== -->
   <div class="col">
     <p class="preview-note">プレビュー（生成されるHTMLとほぼ同じ表示です）</p>
     <div class="pv" id="preview"></div>
   </div>
-
+ 
 </div>
-
+ 
 <script>
 /* ---------- State ---------- */
 let sections = [];
 let uid = 1;
-
+ 
 /* ---------- Theme (editor) ---------- */
 function toggleEditorTheme(){
   const r=document.documentElement;
@@ -177,7 +182,7 @@ function toggleEditorTheme(){
   r.setAttribute('data-theme',next);
   document.getElementById('editorTheme').textContent = next==='dark' ? '🌙 ダーク' : '☀ ライト';
 }
-
+ 
 /* ---------- Helpers ---------- */
 function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function inlineMd(t){
@@ -218,7 +223,7 @@ function parseBody(text){
   }
   return out.join('\n');
 }
-
+ 
 /* ---------- Editor UI ---------- */
 function addSection(level){ sections.push({id:uid++,level,heading:'',body:''}); render(); renderEditor();
   setTimeout(()=>{const el=document.querySelector(`#sec-${uid-1} .heading`); if(el) el.focus();},0); }
@@ -226,7 +231,7 @@ function removeSection(id){ sections=sections.filter(s=>s.id!==id); render(); re
 function moveSection(id,dir){ const i=sections.findIndex(s=>s.id===id),j=i+dir;
   if(j<0||j>=sections.length)return; [sections[i],sections[j]]=[sections[j],sections[i]]; render(); renderEditor(); }
 function updateField(id,key,val){ const s=sections.find(x=>x.id===id); if(s){s[key]=val; render();} }
-
+ 
 function renderEditor(){
   const root=document.getElementById('sections');
   if(sections.length===0){ root.innerHTML='<div class="empty">セクションがありません。下のボタンで追加してください。</div>'; return; }
@@ -253,7 +258,7 @@ function renderEditor(){
     root.appendChild(card);
   });
 }
-
+ 
 /* ---------- Preview + build ---------- */
 function buildBodyHTML(){
   let hid=0; const toc=[]; const parts=[];
@@ -274,8 +279,29 @@ function render(){
   if(t) header+=`<h1>${inlineMd(t)}</h1>`;
   if(st) header+=`<p class="flavor"><em>${inlineMd(st)}</em></p>`;
   document.getElementById('preview').innerHTML=(header+body)||'<div class="empty">ここにプレビューが表示されます</div>';
+  addPreviewCopyButtons();
 }
-
+function pvCopy(text,btn){
+  const ok=()=>{const o=btn.textContent;btn.textContent='済';btn.classList.add('done');setTimeout(()=>{btn.textContent=o;btn.classList.remove('done');},1000);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(ok,()=>ok());}else{ok();}
+}
+function addPreviewCopyButtons(){
+  document.querySelectorAll('#preview p, #preview table, #preview ul').forEach(el=>{
+    el.classList.add('cp-wrap');
+    let text;
+    if(el.classList.contains('dialogue')||el.classList.contains('gm')){
+      const sp=el.querySelector('.speaker');
+      text=(sp?el.textContent.replace(sp.textContent,''):el.textContent).trim();
+    }else{
+      text=(el.innerText||el.textContent).trim();
+    }
+    const b=document.createElement('button');
+    b.className='cp-btn'; b.type='button'; b.textContent='コピー';
+    b.addEventListener('click',ev=>{ev.stopPropagation(); pvCopy(text,b);});
+    el.appendChild(b);
+  });
+}
+ 
 /* ---------- Export standalone HTML (with its own theme toggle) ---------- */
 function fullHTML(){
   const {body,toc}=buildBodyHTML();
@@ -284,7 +310,7 @@ function fullHTML(){
   const navItems=toc.map(it=>{const cls=it.lv===1?'toc-h1':'toc-h2';
     return `<li class="${cls}"><a href="#${it.anchor}">${esc(it.text)}</a></li>`;}).join('\n');
   const header=`<h1 class="doc-title">${inlineMd(title)}</h1>`+(subtitle?`<p class="flavor"><em>${inlineMd(subtitle)}</em></p>`:'');
-
+ 
   return `<!DOCTYPE html>
 <html lang="ja" data-theme="dark">
 <head>
@@ -330,6 +356,12 @@ th{background:var(--accent2);color:#fff;font-weight:700;}
 tr:nth-child(even) td{background:var(--panel);}
 td strong{color:var(--accent);}
 ::selection{background:var(--accent2);color:#fff;}
+.cp-wrap{position:relative;}
+.cp-btn{position:absolute;top:4px;right:4px;z-index:5;border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:5px;font-size:0.72rem;line-height:1;padding:0.25rem 0.45rem;cursor:pointer;opacity:0;transition:opacity .15s,color .15s;font-family:inherit;}
+.cp-wrap:hover>.cp-btn,.cp-btn:focus{opacity:1;}
+.cp-btn:hover{color:var(--ink);border-color:var(--accent2);}
+.cp-btn.done{color:#fff;background:var(--accent2);border-color:var(--accent2);opacity:1;}
+@media (hover:none){.cp-btn{opacity:.7;}}
 .fab{position:fixed;z-index:50;border:none;cursor:pointer;border-radius:50%;width:46px;height:46px;font-size:1.1rem;box-shadow:0 4px 14px rgba(0,0,0,0.3);background:var(--accent2);color:#fff;transition:opacity .2s;}
 #theme-btn{right:1.4rem;bottom:5.2rem;}
 #top-btn{right:1.4rem;bottom:1.4rem;opacity:0;pointer-events:none;}
@@ -373,12 +405,36 @@ ${body}
   function spy(){var cur=secs[0],y=window.scrollY+120;for(var k=0;k<secs.length;k++){if(secs[k].offsetTop<=y)cur=secs[k];}links.forEach(function(a){a.classList.toggle('active',cur&&a.getAttribute('href')==='#'+cur.id);});topBtn.classList.toggle('show',window.scrollY>400);}
   window.addEventListener('scroll',spy,{passive:true});spy();
   topBtn.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+ 
+  // ----- per-block copy buttons -----
+  function copyText(text,btn){
+    function ok(){var o=btn.textContent;btn.textContent='コピー済';btn.classList.add('done');setTimeout(function(){btn.textContent=o;btn.classList.remove('done');},1200);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(ok,function(){fallback(text,ok);});}
+    else{fallback(text,ok);}
+  }
+  function fallback(text,ok){var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok();}catch(e){}document.body.removeChild(ta);}
+  var blocks=document.querySelectorAll('.wrap p, .wrap table, .wrap ul');
+  blocks.forEach(function(el){
+    if(el.classList.contains('doc-title'))return;
+    el.classList.add('cp-wrap');
+    var text;
+    if(el.classList.contains('dialogue')||el.classList.contains('gm')){
+      var sp=el.querySelector('.speaker');
+      text=((sp?el.textContent.replace(sp.textContent,''):el.textContent)).trim();
+    }else{
+      text=(el.innerText||el.textContent).trim();
+    }
+    var b=document.createElement('button');
+    b.className='cp-btn';b.type='button';b.textContent='コピー';b.setAttribute('aria-label','このブロックをコピー');
+    b.addEventListener('click',function(ev){ev.stopPropagation();copyText(text,b);});
+    el.appendChild(b);
+  });
 })();
 <\/script>
 </body>
 </html>`;
 }
-
+ 
 function downloadHTML(){
   if(sections.length===0){ alert('セクションを1つ以上追加してください。'); return; }
   const html=fullHTML();
@@ -387,13 +443,13 @@ function downloadHTML(){
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=title+'.html'; a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
-
+ 
 /* ---------- Draft (session only) ---------- */
 function saveDraft(){
   window.__draft={title:document.getElementById('title').value,subtitle:document.getElementById('subtitle').value,sections:JSON.parse(JSON.stringify(sections))};
   alert('このセッション内に下書きを保存しました。\n（ページを閉じると消えます。長期保存はHTMLをダウンロードしてください）');
 }
-
+ 
 /* ---------- Generic sample ---------- */
 function loadSample(){
   document.getElementById('title').value='サンプルシナリオ';
@@ -406,7 +462,7 @@ function loadSample(){
   ];
   render(); renderEditor();
 }
-
+ 
 /* ---------- Init ---------- */
 renderEditor(); render();
 </script>
