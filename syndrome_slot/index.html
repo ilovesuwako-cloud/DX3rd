@@ -92,6 +92,8 @@
   }
   .lever:active{transform:translateY(2px);box-shadow:0 2px 8px rgba(123,77,255,.4);}
   .lever:disabled{opacity:.5;cursor:not-allowed;}
+  .modebtn{background:var(--panel);border:1px solid var(--line);color:var(--sub);padding:9px 22px;border-radius:30px;cursor:pointer;font-size:.85rem;font-weight:bold;transition:.15s;}
+  .modebtn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;}
 
   .opts{max-width:760px;width:100%;margin:16px auto 0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;}
   .opts .row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
@@ -112,6 +114,9 @@
   .pick .act button:hover{border-color:var(--gold);color:var(--txt);}
   .pick.marked{border-color:#2f9e6e;}
   .pick.marked .act button{border-color:#2f9e6e;color:#2f9e6e;}
+  .pick.tri{padding:18px;}
+  .pick.tri .nm{font-size:1.05rem;}
+  .pick.tri .sw span{width:16px;height:30px;}
   .msg{text-align:center;color:var(--sub);font-size:.85rem;margin-top:14px;}
 
   .stat{max-width:760px;width:100%;margin:16px auto 0;display:flex;gap:10px;justify-content:center;}
@@ -127,8 +132,13 @@
 <body>
 <header>
   <h1>ブリード <span class="sub">スロット</span></h1>
-  <p>レバーを引いて、全120通りから組み合わせを3つ抽選</p>
+  <p id="subtitle">レバーを引いて、ピュア＆クロスから組み合わせを3つ抽選</p>
 </header>
+
+<div class="modes" style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap;">
+  <button class="modebtn active" data-m="pc" onclick="setMode('pc')">ピュア / クロス</button>
+  <button class="modebtn" data-m="tri" onclick="setMode('tri')">トライブリード</button>
+</div>
 
 <div class="machine">
   <div class="reels">
@@ -153,7 +163,7 @@
 <div class="result" id="result" style="display:none;">
   <h3>本日のお題</h3>
   <div class="picks" id="picks"></div>
-  <p class="hint" style="margin-top:10px;">「作成済にする」を押すと、その組み合わせは次回以降の抽選から外れます</p>
+  <p class="hint" style="margin-top:10px;">「作成済にする」で記録できます（カウントに反映されます）</p>
 </div>
 
 <div class="stat">
@@ -189,12 +199,63 @@ for(let i=0;i<syndromes.length;i++)
     combos.push({type:"cross",idx:[i,j]});
 
 const done = combos.map(()=>false);
+const triDone = {}; // "i-j-k" => true
 let spinning=false;
+let mode='pc'; // 'pc' = ピュア/クロス, 'tri' = トライ
+function triKey(idxArr){return [...idxArr].sort((a,b)=>a-b).join('-');}
+
+// トライ用：許可されたシンドローム単体インデックスのプール
+function synPool(){
+  const blocked=[];
+  if(!document.getElementById('allowUro').checked) blocked.push(12);
+  if(!document.getElementById('allowAza').checked) blocked.push(13);
+  if(!document.getElementById('allowMis').checked) blocked.push(14);
+  const pool=[];
+  syndromes.forEach((s,i)=>{ if(!blocked.includes(i)) pool.push(i); });
+  return pool;
+}
+
+function setMode(m){
+  if(spinning) return;
+  mode=m;
+  document.querySelectorAll('.modebtn').forEach(b=>b.classList.toggle('active',b.dataset.m===m));
+  document.getElementById('subtitle').textContent =
+    m==='pc' ? 'レバーを引いて、ピュア＆クロスから組み合わせを3つ抽選'
+             : 'レバーを引いて、3つのシンドロームでトライブリードを1つ抽選';
+  document.getElementById('result').style.display='none';
+  document.querySelectorAll('.reel').forEach(rl=>rl.classList.remove('flash','lit'));
+  initReels();
+  updateStat();
+}
+
+// 初期リール表示（モードに応じた中身）
+function initReels(){
+  ['strip0','strip1','strip2'].forEach((id)=>{
+    const strip=document.getElementById(id);
+    let html='';
+    for(let k=0;k<5;k++){
+      if(mode==='pc'){
+        const c=combos[Math.floor(Math.random()*combos.length)];
+        html+=`<div class="cell">${cellHTML(c)}</div>`;
+      }else{
+        const i=Math.floor(Math.random()*syndromes.length);
+        html+=`<div class="cell">${synCellHTML(i)}</div>`;
+      }
+    }
+    strip.innerHTML=html;
+    strip.style.transition='none';
+    strip.style.transform='translateY(48px)';
+  });
+}
 
 function comboName(c){return c.idx.map(i=>syndromes[i].n).join(" × ");}
 function cellHTML(c){
   const sw=c.idx.map(idx=>`<span style="background:${syndromes[idx].c}"></span>`).join('');
   return `<div class="sw">${sw}</div><div><div class="ty">${c.type==="pure"?"ピュア":"クロス"}</div><div class="txt">${comboName(c)}</div></div>`;
+}
+// トライ用：単一シンドロームのセル
+function synCellHTML(i){
+  return `<div class="sw"><span style="background:${syndromes[i].c}"></span></div><div><div class="txt">${syndromes[i].n}</div></div>`;
 }
 
 function currentPool(){
@@ -210,27 +271,35 @@ function currentPool(){
   return pool;
 }
 
+function nCr(n,r){if(r<0||r>n)return 0;let v=1;for(let k=0;k<r;k++)v=v*(n-k)/(k+1);return Math.round(v);}
+
 function updateStat(){
-  const d=done.filter(Boolean).length;
-  document.getElementById('doneNum').textContent=d;
-  document.getElementById('poolNum').textContent=currentPool().length;
+  if(mode==='pc'){
+    document.getElementById('doneNum').textContent=done.filter(Boolean).length;
+    document.getElementById('poolNum').textContent=currentPool().length;
+  }else{
+    document.getElementById('doneNum').textContent=Object.keys(triDone).length;
+    const n=synPool().length;
+    document.getElementById('poolNum').textContent=nCr(n,3);
+  }
 }
 
 // リールに流すダミー帯を作る（最後に当選セルを置く）
-function buildStrip(stripEl, pool, winIdx){
+// pool: インデックス配列, winIdx: 当選インデックス, renderCell: idx→HTML
+function buildStrip(stripEl, pool, winIdx, renderCell){
   const cellH=54;
   const fillers=48;
   let html='';
   for(let k=0;k<fillers;k++){
     const r=pool[Math.floor(Math.random()*pool.length)];
-    html+=`<div class="cell">${cellHTML(combos[r])}</div>`;
+    html+=`<div class="cell">${renderCell(r)}</div>`;
   }
   // 当選セル（停止位置）
-  html+=`<div class="cell win">${cellHTML(combos[winIdx])}</div>`;
+  html+=`<div class="cell win">${renderCell(winIdx)}</div>`;
   // 後ろにもダミー
   for(let k=0;k<3;k++){
     const r=pool[Math.floor(Math.random()*pool.length)];
-    html+=`<div class="cell">${cellHTML(combos[r])}</div>`;
+    html+=`<div class="cell">${renderCell(r)}</div>`;
   }
   stripEl.innerHTML=html;
   // 当選セルが窓中央に来る位置を計算
@@ -243,47 +312,57 @@ function buildStrip(stripEl, pool, winIdx){
 
 function spin(){
   if(spinning) return;
-  const pool=currentPool();
   const msg=document.getElementById('msg');
-  if(pool.length===0){
-    msg.textContent='抽選できる組み合わせがありません（すべて作成済み、または条件によります）';
-    document.getElementById('result').style.display='none';
-    return;
+
+  if(mode==='pc'){
+    const pool=currentPool();
+    if(pool.length===0){
+      msg.textContent='抽選できる組み合わせがありません（条件によります）';
+      document.getElementById('result').style.display='none';
+      return;
+    }
+    // 重複なしで最大3つ抽選（3つの組み合わせ）
+    const shuffled=[...pool];
+    for(let k=shuffled.length-1;k>0;k--){const r=Math.floor(Math.random()*(k+1));[shuffled[k],shuffled[r]]=[shuffled[r],shuffled[k]];}
+    const wins=shuffled.slice(0,Math.min(3,pool.length));
+    while(wins.length<3) wins.push(null);
+    runReels(pool, wins, idx=>cellHTML(combos[idx]), ()=>showResultPC(wins));
+  }else{
+    const sp=synPool();
+    if(sp.length<3){
+      msg.textContent='トライには3シンドローム必要です。追加シンドロームのチェックを増やしてください';
+      document.getElementById('result').style.display='none';
+      return;
+    }
+    // 重複なしでシンドローム3つ抽選（各リール1つ）
+    const shuffled=[...sp];
+    for(let k=shuffled.length-1;k>0;k--){const r=Math.floor(Math.random()*(k+1));[shuffled[k],shuffled[r]]=[shuffled[r],shuffled[k]];}
+    const wins=shuffled.slice(0,3);
+    runReels(sp, wins, idx=>synCellHTML(idx), ()=>showResultTri(wins));
   }
-  msg.textContent='';
+}
+
+// 共通：3リールを回して停止・発光させ、完了時にonDoneを呼ぶ
+function runReels(pool, wins, renderCell, onDone){
+  document.getElementById('msg').textContent='';
   spinning=true;
   document.getElementById('lever').disabled=true;
   document.getElementById('result').style.display='none';
-  // 前回の発光をリセット
   document.querySelectorAll('.reel').forEach(rl=>rl.classList.remove('flash','lit'));
 
-  // 重複なしで最大3つ抽選
-  const shuffled=[...pool];
-  for(let k=shuffled.length-1;k>0;k--){const r=Math.floor(Math.random()*(k+1));[shuffled[k],shuffled[r]]=[shuffled[r],shuffled[k]];}
-  const wins=shuffled.slice(0,Math.min(3,pool.length));
-  // 3台に満たない場合は残りの台はダミー回転だけ
-  while(wins.length<3) wins.push(null);
-
   const stopYs=[];
-  const startYs=[];
   for(let r=0;r<3;r++){
     const strip=document.getElementById('strip'+r);
-    const winIdx = wins[r]!==null ? wins[r] : pool[Math.floor(Math.random()*pool.length)];
-    // 先に帯を生成（innerHTML確定）
-    const stopY=buildStrip(strip, pool, winIdx);
+    const winIdx = wins[r]!==null && wins[r]!==undefined ? wins[r] : pool[Math.floor(Math.random()*pool.length)];
+    const stopY=buildStrip(strip, pool, winIdx, renderCell);
     stopYs.push(stopY);
-    // 開始位置：当選セルより十分手前から流す（多数のセルが窓を通過する）
-    const startY = stopY + 40*54; // 40セル分手前
-    startYs.push(startY);
-    // トランジション無効で開始位置にセット
+    const startY = stopY + 40*54;
     strip.style.transition='none';
     strip.style.transform=`translateY(${startY}px)`;
   }
 
-  // 全リールのreflowを強制してから停止アニメ開始
   void document.getElementById('strip0').offsetHeight;
 
-  // 各台を時間差で停止
   let finished=0;
   for(let r=0;r<3;r++){
     const strip=document.getElementById('strip'+r);
@@ -292,19 +371,15 @@ function spin(){
     strip.style.transition=`transform ${dur}s cubic-bezier(.12,.7,.2,1)`;
     strip.style.transform=`translateY(${stopYs[r]}px)`;
     setTimeout(()=>{
-      // 停止の瞬間に虹色フラッシュ
       reel.classList.add('flash');
-      setTimeout(()=>{
-        reel.classList.remove('flash');
-        reel.classList.add('lit');
-      },600);
+      setTimeout(()=>{reel.classList.remove('flash');reel.classList.add('lit');},600);
       finished++;
-      if(finished===3) setTimeout(()=>showResult(wins),650);
+      if(finished===3) setTimeout(onDone,650);
     }, dur*1000+60);
   }
 }
 
-function showResult(wins){
+function showResultPC(wins){
   const real=wins.filter(w=>w!==null);
   const el=document.getElementById('picks');
   el.innerHTML='';
@@ -330,6 +405,37 @@ function showResult(wins){
   }
 }
 
+// トライ結果：3シンドローム1つの組み合わせを1枚で表示
+function showResultTri(wins){
+  const key=triKey(wins);
+  const sw=[...wins].sort((a,b)=>a-b).map(i=>`<span style="background:${syndromes[i].c}"></span>`).join('');
+  const name=[...wins].sort((a,b)=>a-b).map(i=>syndromes[i].n).join(" × ");
+  const el=document.getElementById('picks');
+  el.innerHTML='';
+  const d=document.createElement('div');
+  d.className='pick tri'+(triDone[key]?' marked':'');
+  d.style.gridColumn='1 / -1';
+  d.innerHTML=`
+    <div class="ty">トライブリード</div>
+    <div class="sw">${sw}</div>
+    <div class="nm">${name}</div>
+    <div class="act"><button onclick="markTriDone('${key}',this)">${triDone[key]?'作成済 ✓':'作成済にする'}</button></div>
+  `;
+  el.appendChild(d);
+  document.getElementById('result').style.display='block';
+  document.getElementById('lever').disabled=false;
+  spinning=false;
+  updateStat();
+}
+
+function markTriDone(key,btn){
+  triDone[key]=!triDone[key];
+  if(!triDone[key]) delete triDone[key];
+  btn.textContent=(key in triDone)?'作成済 ✓':'作成済にする';
+  btn.closest('.pick').classList.toggle('marked',key in triDone);
+  updateStat();
+}
+
 function markDone(idx,btn){
   done[idx]=!done[idx];
   btn.textContent=done[idx]?'作成済 ✓':'作成済にする';
@@ -338,16 +444,7 @@ function markDone(idx,btn){
 }
 
 // 初期リール表示
-['strip0','strip1','strip2'].forEach((id,r)=>{
-  const strip=document.getElementById(id);
-  let html='';
-  for(let k=0;k<5;k++){
-    const c=combos[Math.floor(Math.random()*combos.length)];
-    html+=`<div class="cell">${cellHTML(c)}</div>`;
-  }
-  strip.innerHTML=html;
-  strip.style.transform='translateY(48px)';
-});
+initReels();
 
 document.getElementById('allowUro').addEventListener('change',updateStat);
 document.getElementById('allowAza').addEventListener('change',updateStat);
