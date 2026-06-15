@@ -37,7 +37,7 @@
     min-height:100vh;
   }
   .wrap{max-width:1200px;margin:0 auto;padding:32px 22px 80px}
-
+ 
   header.hero{
     position:relative;
     border:1px solid var(--line);
@@ -59,29 +59,29 @@
   h1 .glyph{color:var(--spark)}
   .sub{color:var(--text-dim);font-size:14px;max-width:64ch;position:relative}
   .sub code{font-family:var(--mono);color:var(--volt);font-size:.92em}
-
+ 
   .steps{display:flex;gap:14px;margin:22px 0 2px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--text-dim);position:relative}
   .steps .s{display:flex;align-items:center;gap:8px}
   .steps .n{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--spark);font-size:11px;background:var(--panel-2)}
   .steps .arrow{color:var(--line);align-self:center}
-
+ 
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
   @media(max-width:900px){.grid{grid-template-columns:1fr}}
-
+ 
   .card{border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,var(--panel),var(--panel-2));display:flex;flex-direction:column}
   .card h2{margin:0;padding:14px 18px;font-size:13px;letter-spacing:.04em;font-weight:700;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;gap:10px}
   .card h2 .tag{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);font-weight:500}
   .card .body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;flex:1}
-
+ 
   textarea{width:100%;min-height:320px;resize:vertical;background:var(--ink);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:var(--mono);font-size:12.5px;line-height:1.55;padding:13px 14px;outline:none}
   textarea:focus{border-color:var(--volt-dim);box-shadow:0 0 0 3px rgba(201,168,255,.12)}
   textarea::placeholder{color:#473d5e}
-
+ 
   .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
   .opt{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-dim);border:1px solid var(--line-soft);border-radius:7px;padding:6px 10px;cursor:pointer;user-select:none;background:var(--panel-2)}
   .opt:hover{border-color:var(--line);color:var(--text)}
   .opt input{accent-color:var(--volt);width:14px;height:14px;margin:0}
-
+ 
   button{font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;border-radius:9px;border:1px solid transparent;padding:12px 18px;letter-spacing:.02em;transition:transform .05s ease, filter .15s ease}
   button:active{transform:translateY(1px)}
   .btn-go{background:linear-gradient(180deg,var(--spark),var(--spark-dim));color:#1a1500;border-color:#5a4700;box-shadow:0 6px 18px rgba(255,227,77,.15);flex:1;min-width:170px}
@@ -91,17 +91,17 @@
   .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--text-dim)}
   .btn-ghost:hover{color:var(--text);border-color:var(--volt-dim)}
   .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:auto}
-
+ 
   .status{font-family:var(--mono);font-size:12px;padding:10px 14px;border-radius:8px;border:1px solid var(--line-soft);background:var(--panel-2);color:var(--text-dim);min-height:38px;display:flex;align-items:center;gap:9px}
   .status.ok{color:var(--ok);border-color:rgba(95,224,168,.3)}
   .status.err{color:var(--warn);border-color:rgba(255,122,138,.3)}
   .status .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
-
+ 
   .preview{display:flex;flex-wrap:wrap;gap:8px}
   .chip{font-family:var(--mono);font-size:11px;border:1px solid var(--line-soft);border-radius:999px;padding:4px 11px;color:var(--text-dim);background:var(--panel-2)}
   .chip b{color:var(--spark);font-weight:600}
   .chip.volt b{color:var(--volt)}
-
+ 
   footer{margin-top:30px;color:var(--text-faint);font-size:11.5px;font-family:var(--mono);text-align:center;line-height:1.8}
   .hint{font-size:12px;color:var(--text-dim);border-left:2px solid var(--volt-dim);padding:4px 0 4px 12px;margin:0}
   .hint b{color:var(--spark)}
@@ -109,12 +109,12 @@
 </head>
 <body>
 <div class="wrap">
-
+ 
   <header class="hero">
     <div class="eyebrow"><span class="dash"></span>YTSHEET CCFOLIA-JSON &nbsp;→&nbsp; 整形 &nbsp;·&nbsp; DX3rd</div>
     <h1>ゆとシート<span class="glyph">⚡</span>ココフォリア駒コンバータ</h1>
     <p class="sub">ゆとシート（ダブルクロス3rd）が出力した <code>ココフォリア用コマJSON</code> を貼り付けると、整形仕様書に沿ったパレットへ組み替えます。ステータス・能力値判定・エフェクト/コンボ（全タイミング・侵蝕段階別・命中/ダメージ式つき）を生成します。</p>
-
+ 
     <div class="steps">
       <div class="s"><span class="n">1</span>ゆとシートで「ココフォリア出力」をコピー</div>
       <span class="arrow">—</span>
@@ -123,7 +123,7 @@
       <div class="s"><span class="n">3</span>コピー → ココフォリア盤面に Ctrl+V</div>
     </div>
   </header>
-
+ 
   <div class="grid">
     <section class="card">
       <h2>入力：ゆとシート ココフォリア用JSON <span class="tag">paste here</span></h2>
@@ -140,7 +140,7 @@
         </div>
       </div>
     </section>
-
+ 
     <section class="card">
       <h2>出力：ココフォリア 駒JSON <span class="tag">copy &amp; paste</span></h2>
       <div class="body">
@@ -155,21 +155,21 @@
       </div>
     </section>
   </div>
-
+ 
   <footer>
     YTSHEET CCFOLIA-JSON → 整形パレット · Double Cross 3rd<br>
     侵蝕Bはコマ上で管理する変数（初期0）。命中の十の位ダイスはダメージ式に連動します。
   </footer>
 </div>
-
+ 
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
-
+ 
 /* ============================================================
    ゆとシート ココフォリア用コマJSON → 整形パレット（仕様書準拠）
    ============================================================ */
-
+ 
 /* DX3rd 基本技能 → 能力値 対応（並び順も定義） */
 const STAT_SKILLS = {
   "肉体":["白兵","回避","運転"],
@@ -179,16 +179,31 @@ const STAT_SKILLS = {
 };
 /* 専門分野を持ちうる技能（取得時に空欄行を添える） */
 const SPECIALIZED = new Set(["運転","芸術","知識","情報"]);
-
-/* 命中: (2+侵蝕B+{DB})dx(8+{CB})+2+{AB} -> ({侵蝕B}+2)DX8+2 */
+ 
+/* 命中: 侵蝕Bの有無どちらでも ({侵蝕B}+N)DXC+達成 に統一
+   例) (2+侵蝕B+{DB})dx(8+{CB})+2+{AB} -> ({侵蝕B}+2)DX8+2
+       (5++{DB})dx(10+{CB})+2+{AB}     -> ({侵蝕B}+5)DX10+2 */
 function convHit(s){
   if(!s) return null;
-  const m = s.match(/\(([^)]*侵蝕B[^)]*)\+\{DB\}\)dx\((\d+)\+\{CB\}\)\+(\d+)\+\{AB\}/);
+  const m = s.match(/\(([^)]*?)\+?\{DB\}\)dx\((\d+)\+\{CB\}\)\+(\d+)\+\{AB\}/);
   if(!m) return null;
-  const dm = m[1].match(/^(\d+)\+侵蝕B(.*)$/);
-  const dice = dm ? `{侵蝕B}+${dm[1]}${dm[2]}` : m[1];
-  const fixed = (m[3] && m[3]!=="0") ? `+${m[3]}` : "";
-  return `(${dice})DX${m[2]}${fixed}`;
+  let dicePart = m[1];
+  const cval = m[2];
+  const achieve = m[3];
+ 
+  // 侵蝕B を除去し、余分な + や符号を整理
+  let base = dicePart.replace(/侵蝕B/g,"");
+  base = base.replace(/\++/g,"+").replace(/^\+|\+$/g,"");
+  base = base.replace(/\+\-/g,"-").replace(/\-\+/g,"-");
+ 
+  // 必ず {侵蝕B} を前置（パラメータ管理のため侵蝕B無しでも補う）
+  let dice;
+  if(base==="") dice = "{侵蝕B}";
+  else if(/^[+\-]/.test(base)) dice = `{侵蝕B}${base}`;
+  else dice = `{侵蝕B}+${base}`;
+ 
+  const fixed = (achieve && achieve!=="0") ? `+${achieve}` : "";
+  return `(${dice})DX${cval}${fixed}`;
 }
 /* ダメージ: d10+6+6D+{AtkB} -> (命中判定の十の位+1)D10+6D10+6 */
 function convDmg(s){
@@ -203,7 +218,7 @@ function convDmg(s){
   const tail = others.length ? "+"+others.join("+") : "";
   return `(命中判定の十の位+1)D10+${diceN}D10${tail}`;
 }
-
+ 
 /* タイミング表記 → 見出し（仕様書の【セットアップ】等） */
 function timingHeading(t){
   if(/セットアップ/.test(t)) return "セットアップ";
@@ -218,37 +233,37 @@ function timingHeading(t){
 /* タイミングの並び順 */
 const TIMING_ORDER = ["セットアップ","イニシアチブ","マイナー","メジャー","リアクション","オート","クリンナップ","その他"];
 function timingRank(h){ const i=TIMING_ORDER.indexOf(h); return i<0?99:i; }
-
+ 
 /* 段階の並び順 */
 const STAGE_ORDER = ["100%未満","100%以上","120%以上","160%以上"];
 function stageRank(c){ const i=STAGE_ORDER.indexOf(c); return i<0?99:i; }
-
+ 
 /* ステータス値を数値化 */
 function toNum(v, def=0){
   if(v==null||v==="") return def;
   const m = String(v).match(/-?\d+/);
   return m ? parseInt(m[0],10) : def;
 }
-
+ 
 function convert(){
   const raw = $("input").value.trim();
   if(!raw){ setStatus("入力が空です。ゆとシートのココフォリア用JSONを貼り付けてください。","err"); return; }
-
+ 
   let src;
   try{ src = JSON.parse(raw); }
   catch(e){ setStatus("JSON の読み取りに失敗しました："+e.message,"err"); return; }
-
+ 
   const d = (src && src.data) ? src.data : src;
   if(!d || !d.name){ setStatus("data.name が見つかりません。ゆとシートのココフォリア用JSONか確認してください。","err"); return; }
-
+ 
   const opt = {
     skillBlank: $("optSkillBlank").checked,
     combo: $("optCombo").checked,
     fear: $("optFear").checked,
   };
-
+ 
   const name = d.name;
-
+ 
   /* ---------- ステータス ---------- */
   // 元JSONの status から HP/侵蝕/ロイス/財産 を拾い、仕様書の5項目に整える
   const srcStatus = Array.isArray(d.status) ? d.status : [];
@@ -257,14 +272,14 @@ function convert(){
   const encS = findSt("侵蝕");
   const loisS = findSt("ロイス");
   const fortuneS = findSt("財産");
-
+ 
   const status = [];
   if(hpS)  status.push({label:"HP",   value:toNum(hpS.value), max:toNum(hpS.max, toNum(hpS.value))});
   if(encS) status.push({label:"侵蝕", value:toNum(encS.value), max:0});
   if(loisS) status.push({label:"ロイス", value:toNum(loisS.value), max:toNum(loisS.max,7)});
   if(fortuneS) status.push({label:"財産", value:toNum(fortuneS.value), max:toNum(fortuneS.max, toNum(fortuneS.value))});
   status.push({label:"侵蝕B", value:0, max:0});
-
+ 
   /* ---------- 能力値・技能（params から） ---------- */
   const params = Array.isArray(d.params) ? d.params : [];
   const ability = {肉体:0, 感覚:0, 精神:0, 社会:0};
@@ -281,7 +296,7 @@ function convert(){
       skillLv[lbl] = {lv: toNum(p.value), label: lbl, base};
     }
   }
-
+ 
   /* ---------- チャットパレット組み立て ---------- */
   const L = [];
   L.push("1d10 【登場判定】");
@@ -298,7 +313,7 @@ function convert(){
     L.push(`${mindVal}DX${willTail} 【恐怖判定】`);
   }
   L.push("");
-
+ 
   /* 能力値判定（全基本技能を能力値順に、専門技能は空欄行を添える） */
   L.push("＊＊＊能力値判定＊＊＊");
   for(const st of ["肉体","感覚","精神","社会"]){
@@ -327,7 +342,7 @@ function convert(){
     }
     L.push("");
   }
-
+ 
   /* ---------- エフェクト/コンボ ---------- */
   if(opt.combo && typeof d.commands === "string"){
     const comboBlock = extractComboBlock(d.commands);
@@ -343,7 +358,7 @@ function convert(){
           supportRows.push(e);
         }
       }
-
+ 
       // 独立セクション：段階を持たない非攻撃コンボを一度だけ（タイミング順・見出し付き）
       if(supportRows.length){
         L.push("＊＊＊エフェクト/コンボ＊＊＊");
@@ -358,7 +373,7 @@ function convert(){
           for(const block of byTiming[h]) L.push(...block);
         }
       }
-
+ 
       // 段階別セクション：攻撃コンボのみ（タイミング見出し付き）
       let stages = [...new Set(attackRows.map(r=>r.cond))];
       stages.sort((a,b)=>stageRank(a)-stageRank(b));
@@ -377,13 +392,13 @@ function convert(){
       }
     }
   }
-
+ 
   const commands = L.join("\n").replace(/\n{3,}/g,"\n\n").trim();
-
+ 
   /* ---------- メモ ---------- */
   // 元JSONの memo から CN/W/C/S を再構成（ゆとシート出力のmemoを流用しつつ整形）
   const memo = buildMemo(name, d);
-
+ 
   /* ---------- 組み立て ---------- */
   const out = {
     kind:"character",
@@ -399,12 +414,12 @@ function convert(){
     }
   };
   $("output").value = JSON.stringify(out, null, 2);
-
+ 
   renderPreview(out.data);
   const hitCount = (commands.match(/【命中判定】/g)||[]).length;
   setStatus(`変換完了：「${name}」 ／ ステータス${status.length}・パレット${commands.split("\n").length}行・命中ロール${hitCount}件`,"ok");
 }
-
+ 
 /* commands から コンボ範囲を抽出（マーカー不要）
    ・最初の「【…】：」行を起点
    ・「### ■代入式」または「//定義行」の手前を終端
@@ -413,7 +428,7 @@ function extractComboBlock(commands){
   // 旧形式の ●●● マーカーがあれば優先（後方互換）
   const marked = commands.match(/●●●([\s\S]*?)●●●/);
   if(marked) return marked[1];
-
+ 
   const lines = commands.split("\n");
   let start = -1, end = lines.length;
   for(let i=0;i<lines.length;i++){
@@ -425,7 +440,7 @@ function extractComboBlock(commands){
   if(start<0) return null;
   return lines.slice(start, end).join("\n");
 }
-
+ 
 /* ●●●内のコンボをエントリ配列に解析 */
 function parseCombos(body){
   const lines = body.split("\n");
@@ -454,7 +469,7 @@ function parseCombos(body){
   if(cur) entries.push(cur);
   return entries;
 }
-
+ 
 /* 技名整形：｜雷葬 《フルグル》 → ✧雷葬<フルグル>✧ */
 function fmtTitle(nm){
   let t = nm.replace(/^[｜|]\s*/,"");
@@ -469,7 +484,7 @@ function fmtCombo(combo){
 function fmtMeta(e){
   return [e.target, e.range].filter(Boolean).join("/");
 }
-
+ 
 /* 非攻撃コンボの描画（命中・ダメージなし） */
 function renderSupport(e){
   const meta = fmtMeta(e);
@@ -489,17 +504,18 @@ function renderAttack(e, hit, dmg){
   if(dmg) out.push(`${dmg} 【ダメージ判定】`);
   return out;
 }
-
+ 
 /* メモ構築：name／CN／W/C／S */
 function buildMemo(name, d){
   const lines = [];
   lines.push(`name：${name}`);
   // 元JSON memo から読めるものを拾う
   const m = typeof d.memo === "string" ? d.memo : "";
-  // コードネーム
+  // コードネーム（PL: が連結している場合は切り離す）
   let cn = "";
   const cnM = m.match(/コードネーム[:：]\s*([^\n(（]+)/);
   if(cnM) cn = cnM[1].trim();
+  cn = cn.replace(/\s*PL[:：].*$/i, "").trim();
   if(cn) lines.push(`CN：${cn}`);
   // ワークス/カヴァー（"UGNエージェントD / 秘書" の行）
   let wc = "";
@@ -526,9 +542,15 @@ function buildMemo(name, d){
     const joined = syn.split(/[・／\/,，、×]+/).filter(Boolean).join("×");
     lines.push(`S：${joined}`);
   }
+  // PL名（memo内のどこかにある PL: 〇〇 を最下部へ）
+  const plM = m.match(/PL[:：]\s*([^\n]+)/i);
+  if(plM){
+    const pl = plM[1].trim();
+    if(pl) lines.push(`PL：${pl}`);
+  }
   return lines.join("\n");
 }
-
+ 
 function renderPreview(d){
   const box=$("preview"); box.innerHTML="";
   const add=(label,val,volt=false)=>{
@@ -542,12 +564,12 @@ function renderPreview(d){
   for(const st of d.status) add(st.label, st.label==="侵蝕B"?`${st.value}`:`${st.value}/${st.max}`);
 }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
-
+ 
 function setStatus(msg, kind){
   $("status").className="status"+(kind?` ${kind}`:"");
   $("statusText").textContent=msg;
 }
-
+ 
 async function copyOut(){
   const v=$("output").value;
   if(!v){ setStatus("コピーする内容がありません。先に変換してください。","err"); return; }
@@ -560,7 +582,7 @@ async function copyOut(){
     setStatus("コピーしました（フォールバック）。盤面で Ctrl+V。","ok");
   }
 }
-
+ 
 $("convert").addEventListener("click", convert);
 $("copy").addEventListener("click", copyOut);
 $("clearIn").addEventListener("click", ()=>{ $("input").value=""; setStatus("入力をクリアしました。"); });
@@ -569,4 +591,3 @@ $("input").addEventListener("keydown", e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="
 </script>
 </body>
 </html>
-
