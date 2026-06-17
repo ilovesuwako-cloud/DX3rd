@@ -185,24 +185,31 @@ const SPECIALIZED = new Set(["運転","芸術","知識","情報"]);
        (5++{DB})dx(10+{CB})+2+{AB}     -> ({侵蝕B}+5)DX10+2 */
 function convHit(s){
   if(!s) return null;
-  const m = s.match(/\(([^)]*?)\+?\{DB\}\)dx\((\d+)\+\{CB\}\)\+(\d+)\+\{AB\}/);
+  // 達成値は複数項（+2-2 等）も捕捉。C値が空なら攻撃判定でないので除外。
+  const m = s.match(/\(([^)]*?)\+?\{DB\}\)dx\((\d*)\+?\{CB\}\)((?:[+\-]\d+)*)\+\{AB\}/);
   if(!m) return null;
   let dicePart = m[1];
   const cval = m[2];
-  const achieve = m[3];
+  const achieveRaw = m[3];
  
-  // 侵蝕B を除去し、余分な + や符号を整理
+  // C値が空（数値の入っていない空テンプレ＝攻撃判定なし）は命中を出さない
+  if(cval==="") return null;
+ 
+  // 侵蝕B を除去し、余分な + や符号を整理（必ず {侵蝕B} を前置）
   let base = dicePart.replace(/侵蝕B/g,"");
   base = base.replace(/\++/g,"+").replace(/^\+|\+$/g,"");
   base = base.replace(/\+\-/g,"-").replace(/\-\+/g,"-");
- 
-  // 必ず {侵蝕B} を前置（パラメータ管理のため侵蝕B無しでも補う）
   let dice;
   if(base==="") dice = "{侵蝕B}";
   else if(/^[+\-]/.test(base)) dice = `{侵蝕B}${base}`;
   else dice = `{侵蝕B}+${base}`;
  
-  const fixed = (achieve && achieve!=="0") ? `+${achieve}` : "";
+  // 達成値：複数項を計算して合算、0なら省略
+  let achieveSum = 0;
+  const terms = achieveRaw.match(/[+\-]\d+/g) || [];
+  for(const t of terms) achieveSum += parseInt(t,10);
+  const fixed = achieveSum!==0 ? (achieveSum>0?`+${achieveSum}`:`${achieveSum}`) : "";
+ 
   return `(${dice})DX${cval}${fixed}`;
 }
 /* ダメージ: d10+6+6D+{AtkB} -> (命中判定の十の位+1)D10+6D10+6 */
@@ -591,3 +598,4 @@ $("input").addEventListener("keydown", e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="
 </script>
 </body>
 </html>
+ 
