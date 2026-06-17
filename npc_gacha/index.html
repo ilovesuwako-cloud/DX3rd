@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NPCガチャ — Capsule Roster ULTRA PREMIUM</title>
+<style>
+:root{
+  --ink:#efe9df;--ink-dim:#8b8478;--bg:#07080c;--bg-2:#10121a;
+  --card:#14161f;--card-edge:#272b38;--line:#2c303c;
+  --pop:#e8553b;--pop-4:#5b8dd6;--gold:#e6c067;--gold-deep:#b8923c;
+  --mg1:#f4dd8e;--mg2:#caa23f;--mg3:#8a6a23;
+  --serif:"Hiragino Mincho ProN","Yu Mincho",serif;
+  --round:"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  --mono:"SFMono-Regular","Consolas",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(circle at 18% -8%,rgba(230,192,103,.12),transparent 42%),radial-gradient(circle at 88% 108%,rgba(91,141,214,.10),transparent 42%),var(--bg);color:var(--ink);font-family:var(--round);min-height:100vh;padding:clamp(1rem,3vw,2.5rem);line-height:1.6;position:relative}
+.wrap{max-width:900px;margin:0 auto}
+header{text-align:center;margin-bottom:1.8rem}
+.eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.4em;color:var(--gold);text-transform:uppercase}
+h1{font-size:clamp(2.2rem,7vw,3.4rem);font-weight:800;letter-spacing:.08em;margin-top:.3rem;background:linear-gradient(180deg,#fbf3da,#e6c067 55%,#b8923c);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{font-family:var(--mono);font-size:.6rem;letter-spacing:.25em;color:var(--ink-dim);margin-top:.4rem}
+.panel{display:grid;grid-template-columns:1fr;gap:1.5rem}
+@media(min-width:720px){.panel{grid-template-columns:280px 1fr;align-items:start}}
+.controls{background:linear-gradient(180deg,var(--card),#10121a);border:1px solid var(--card-edge);border-radius:18px;padding:1.3rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 24px rgba(0,0,0,.4)}
+.ctl-title{font-family:var(--mono);font-size:.62rem;letter-spacing:.25em;color:var(--ink-dim);text-transform:uppercase;margin-bottom:.7rem}
+.modes{display:flex;gap:.5rem;margin-bottom:1.4rem}
+.mode{flex:1;font-family:var(--round);font-weight:700;font-size:.9rem;padding:.7rem;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink-dim);cursor:pointer;transition:all .18s}
+.mode:hover{border-color:var(--ink-dim);color:var(--ink)}
+.mode.on{background:linear-gradient(180deg,#f4dd8e,#caa23f);color:#2a1f08;border-color:var(--gold);box-shadow:0 2px 10px rgba(202,162,63,.3)}
+.checks{display:flex;flex-direction:column;gap:.55rem}
+.check{display:flex;align-items:center;gap:.7rem;padding:.6rem .75rem;border-radius:12px;border:1px solid var(--line);cursor:pointer;transition:all .15s;user-select:none;font-weight:600;font-size:.92rem}
+.check:hover{background:var(--bg-2)}
+.check .box{width:20px;height:20px;border-radius:6px;flex-shrink:0;border:2px solid var(--ink-dim);display:grid;place-items:center;transition:all .15s}
+.check .box::after{content:"\2713";color:#fff;font-size:.8rem;opacity:0}
+.check.on .box{background:var(--pop);border-color:var(--pop)}.check.on .box::after{opacity:1}
+.check.on{border-color:var(--card-edge);background:var(--bg-2)}
+.hint-mix{font-size:.66rem;color:var(--ink-dim);margin-top:.8rem;line-height:1.5}
+.rates{font-family:var(--mono);font-size:.56rem;letter-spacing:.05em;color:var(--ink-dim);margin-top:.9rem;padding-top:.8rem;border-top:1px solid var(--line);line-height:1.8}
+.rates b.g{color:var(--gold)}
+.rates b.r{background:linear-gradient(90deg,#ff5f6d,#ffc371,#7ee8a2,#3aafff,#b06bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* MACHINE */
+.machine-area{display:flex;flex-direction:column;align-items:center}
+.machine{width:100%;max-width:360px;position:relative;user-select:none;filter:drop-shadow(0 20px 40px rgba(0,0,0,.6))}
+.crown{position:relative;z-index:4;width:62%;margin:0 auto -2px;height:36px;background:linear-gradient(180deg,#fbe8a0,#d4a63e 40%,#a07a24 80%,#785a1a);border-radius:14px 14px 6px 6px;box-shadow:inset 0 2px 2px rgba(255,255,255,.7),inset 0 -2px 4px rgba(100,70,20,.5),0 -4px 12px rgba(244,221,142,.35)}
+.crown::before{content:"";position:absolute;left:50%;top:-12px;transform:translateX(-50%);width:24px;height:24px;background:radial-gradient(circle at 40% 35%,#fff5d0,#e6c067 50%,#a07a24);border-radius:50%;box-shadow:0 0 12px rgba(244,221,142,.7),inset 0 2px 3px rgba(255,255,255,.8)}
+.crown::after{content:"";position:absolute;inset:6px 20%;height:3px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent)}
+.crown-gems{position:absolute;bottom:6px;left:0;right:0;display:flex;justify-content:center;gap:16px}
+.crown-gems span{width:8px;height:8px;border-radius:50%;box-shadow:0 0 6px currentColor,inset 0 1px 2px rgba(255,255,255,.8)}
+.crown-gems .r{background:radial-gradient(circle at 35% 30%,#ff9e9e,#d32f2f);color:#ff5252}
+.crown-gems .b{background:radial-gradient(circle at 35% 30%,#90caf9,#1565c0);color:#42a5f5}
+.crown-gems .gm{background:radial-gradient(circle at 35% 30%,#a5d6a7,#2e7d32);color:#66bb6a}
+.dome-wrap{position:relative;z-index:3}
+.dome{position:relative;aspect-ratio:1;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 32% 24%,rgba(255,255,255,.6),rgba(255,255,255,.06) 40%,transparent 58%),radial-gradient(circle at 70% 80%,rgba(100,130,180,.15),transparent 40%),linear-gradient(160deg,rgba(140,165,200,.3),rgba(40,55,80,.5));box-shadow:inset 0 -30px 60px rgba(0,0,0,.6),inset 0 14px 36px rgba(255,255,255,.12),0 0 0 4px #3a414e,0 0 0 6px rgba(202,162,63,.4),0 0 0 8px #2c303c}
+.dome::before{content:"";position:absolute;z-index:5;width:45%;height:50%;top:4%;left:8%;border-radius:50%;background:radial-gradient(ellipse at 50% 60%,rgba(255,255,255,.35),transparent 70%);pointer-events:none}
+.dome::after{content:"";position:absolute;z-index:5;inset:0;border-radius:50%;pointer-events:none;background:linear-gradient(125deg,transparent 38%,rgba(255,255,255,.18) 45%,transparent 52%)}
+.dome-ring{position:absolute;inset:-8px;border-radius:50%;z-index:2;pointer-events:none;background:conic-gradient(from 45deg,#785a1a,#f4dd8e 25%,#d4a63e 40%,#f4dd8e 55%,#a07a24 70%,#f4dd8e 85%,#785a1a);-webkit-mask:radial-gradient(circle,transparent 48%,#000 49%);mask:radial-gradient(circle,transparent 48%,#000 49%)}
+.capsules-in{position:absolute;inset:14%;display:flex;flex-wrap:wrap;align-content:flex-end;justify-content:center;gap:5px;padding-bottom:6%;z-index:1}
+.mini{width:26px;height:26px;border-radius:50%;box-shadow:inset 0 -5px 7px rgba(0,0,0,.3),inset 0 4px 5px rgba(255,255,255,.45)}
+.mini::before{content:"";display:block;height:50%;border-radius:50% 50% 0 0/100% 100% 0 0;background:rgba(255,255,255,.3)}
+.mini.gold-m{background:linear-gradient(180deg,#f4dd8e,#caa23f)!important;box-shadow:0 0 7px rgba(230,192,103,.7),inset 0 -4px 6px rgba(120,90,30,.4)}
+.mini.iris-m{background:conic-gradient(from 0deg,#ff5f6d,#ffc371,#7ee8a2,#3aafff,#b06bff,#ff5f6d)!important;box-shadow:0 0 9px rgba(255,255,255,.7),inset 0 -4px 6px rgba(0,0,0,.2)}
+
+@keyframes jiggle{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4px) rotate(-6deg)}75%{transform:translateY(3px) rotate(5deg)}}
+.dome.shaking .mini{animation:jiggle .28s ease infinite}
+.dome.charge-gold{animation:chargeGold 0.9s ease}
+.dome.charge-iris{animation:chargeIris 2.2s cubic-bezier(0.15, 0.85, 0.35, 1)}
+@keyframes chargeGold{50%{box-shadow:inset 0 0 60px rgba(255,215,120,.7),0 0 56px rgba(240,200,100,.8),0 0 0 4px #3a414e,0 0 0 6px rgba(202,162,63,.4)}}
+@keyframes chargeIris{0%{box-shadow:inset 0 0 20px rgba(0,0,0,1)} 30%{box-shadow:inset 0 0 70px rgba(255,50,50,0.9),0 0 40px rgba(255,50,50,0.8)} 60%{box-shadow:inset 0 0 90px rgba(50,150,255,0.9),0 0 60px rgba(50,255,100,0.8)} 80%{box-shadow:inset 0 0 110px rgba(200,50,255,1),0 0 90px rgba(255,200,50,1)} 100%{box-shadow:inset 0 0 150px rgba(255,255,255,1),0 0 120px rgba(255,255,255,1),0 0 0 10px #fff}}
+.m-body{margin:-4px auto 0;width:84%;position:relative;z-index:2;background:linear-gradient(180deg,#34384a,#22252f 30%,#1a1d26 70%,#14161f);border-radius:4px 4px 22px 22px;padding:1rem 1rem 1.5rem;box-shadow:inset 0 4px 0 rgba(255,255,255,.06),0 14px 30px rgba(0,0,0,.55)}
+.m-body-frame{position:absolute;inset:0;border-radius:4px 4px 22px 22px;pointer-events:none;background:linear-gradient(180deg,rgba(244,221,142,.6),rgba(160,122,36,.3) 50%,rgba(120,90,26,.2));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:2px}
+.plate{width:70%;margin:0 auto .7rem;padding:.3rem;border-radius:6px;text-align:center;background:linear-gradient(180deg,#f4dd8e,#caa23f);box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 2px 6px rgba(0,0,0,.4);font-family:var(--mono);font-size:.55rem;letter-spacing:.25em;color:#3a2a08;font-weight:800;text-transform:uppercase}
+.slot{background:linear-gradient(180deg,#080604,#1a1410);height:36px;border-radius:8px;margin:0 auto .9rem;width:74%;box-shadow:inset 0 5px 14px rgba(0,0,0,.9),0 0 0 2px rgba(202,162,63,.35);position:relative;z-index: 5;}
+.knob-wrap{display:flex;justify-content:center}
+.knob{width:78px;height:78px;border-radius:50%;cursor:pointer;position:relative;transition:transform .1s;background:conic-gradient(from 0deg,#a07a24,#fbe8a0 25%,#d4a63e 40%,#fbe8a0 55%,#a07a24 70%,#fbe8a0 85%,#a07a24);box-shadow:0 6px 16px rgba(0,0,0,.6),inset 0 2px 4px rgba(255,255,255,.7),inset 0 -4px 8px rgba(100,70,20,.6)}
+.knob::before{content:"";position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle at 38% 30%,#fff7e0,#e6c067 55%,#a87f2c);box-shadow:inset 0 2px 3px rgba(255,255,255,.6)}
+.knob-cross{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.knob-cross::before{content:"";position:absolute;width:56%;height:5px;border-radius:2px;background:#7a5e1d}
+.knob-cross::after{content:"";position:absolute;width:5px;height:56%;border-radius:2px;background:#7a5e1d}
+@keyframes turn{to{transform:rotate(720deg)}}
+.knob.turning{animation:turn .95s cubic-bezier(.4,0,.3,1)}
+.knob:hover:not(.turning){transform:scale(1.06)}
+.feet{display:flex;justify-content:space-between;width:76%;margin:-2px auto 0}
+.foot{width:28px;height:14px;border-radius:0 0 8px 8px;background:linear-gradient(180deg,#34384a,#22252f);box-shadow:0 4px 8px rgba(0,0,0,.4)}
+.hint{margin-top:1.2rem;font-family:var(--mono);font-size:.62rem;letter-spacing:.15em;color:var(--ink-dim);text-align:center;min-height:1.2em}
+.err{color:var(--pop)}
+
+/* 飛び出すリアルカプセルの演出 */
+.ejected-capsule {
+  position: fixed;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  z-index: 180;
+  pointer-events: none;
+  box-shadow: inset 0 -8px 12px rgba(0,0,0,0.5), 0 12px 30px rgba(0,0,0,0.7);
+}
+.ejected-capsule::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 50%;
+  border-radius: 27px 27px 0 0;
+  background: rgba(255,255,255,0.4);
+}
+@keyframes capsuleEject {
+  0% { transform: translate(-50%, -50%) scale(0.4) rotate(0deg); opacity: 0; filter: blur(0); }
+  15% { opacity: 1; }
+  45% { transform: translate(-50%, -180px) scale(1.6) rotate(180deg); }
+  80% { transform: translate(-50%, 20px) scale(4) rotate(360deg); opacity: 1; filter: blur(0); }
+  100% { transform: translate(-50%, 40px) scale(6.5) rotate(410deg); opacity: 0; filter: blur(6px); }
+}
+
+.fly{position:fixed;width:56px;height:56px;border-radius:50%;z-index:50;pointer-events:none;box-shadow:inset 0 -7px 11px rgba(0,0,0,.25),inset 0 6px 8px rgba(255,255,255,.5),0 6px 16px rgba(0,0,0,.4)}
+.fly::before{content:"";display:block;height:50%;border-radius:50% 50% 0 0/100% 100% 0 0;background:rgba(255,255,255,.4)}
+.fly.gold{background:linear-gradient(180deg,#f4dd8e,#caa23f);box-shadow:0 0 18px rgba(230,192,103,.85)}
+.fly.iris{background:conic-gradient(from 0deg,#ff5f6d,#ffc371,#7ee8a2,#3aafff,#b06bff,#ff5f6d);box-shadow:0 0 26px rgba(255,255,255,.85)}
+
+.results{margin-top:2.2rem;display:grid;gap:1rem;grid-template-columns:1fr}
+@media(min-width:640px){.results{grid-template-columns:repeat(3,1fr)}}
+.npc{background:var(--card);border:1px solid var(--card-edge);border-radius:16px;padding:1.2rem;position:relative;opacity:0;transform:translateY(16px) scale(.95)}
+.npc.show{animation:pop .55s cubic-bezier(.2,1.3,.4,1) forwards}
+@keyframes pop{to{opacity:1;transform:none}}
+.npc .cap{position:absolute;top:-15px;left:50%;transform:translateX(-50%);width:32px;height:32px;border-radius:50%;box-shadow:inset 0 -5px 7px rgba(0,0,0,.25),inset 0 4px 5px rgba(255,255,255,.5)}
+.npc .cap::before{content:"";display:block;height:50%;border-radius:50% 50% 0 0/100% 100% 0 0;background:rgba(255,255,255,.4)}
+.npc .nm{font-family:var(--serif);font-size:1.4rem;font-weight:600;margin-top:.7rem;letter-spacing:.03em}
+.npc .mt{font-family:var(--mono);font-size:.64rem;color:var(--ink-dim);letter-spacing:.1em}
+.npc .role{color:var(--pop);font-weight:700;font-size:.92rem;margin:.15rem 0 .9rem}
+.npc .f{margin-bottom:.7rem}.npc .f:last-child{margin-bottom:0}
+.npc .k{font-family:var(--mono);font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-dim);display:block;margin-bottom:.15rem}
+.npc .v{font-size:.9rem}.npc .v.q{font-family:var(--serif);font-style:italic}
+.tags{margin-top:.8rem;display:flex;flex-wrap:wrap;gap:.35rem}
+.tag{font-family:var(--mono);font-size:.54rem;letter-spacing:.08em;padding:.15rem .5rem;border-radius:20px;border:1px solid var(--line);color:var(--ink-dim)}
+
+.npc.gold-c{grid-column:1/-1;border:2px solid var(--gold);background:linear-gradient(180deg,#1c1810,#14110a);box-shadow:0 0 30px rgba(230,192,103,.3),inset 0 0 30px rgba(230,192,103,.06);overflow:hidden}
+.npc.gold-c::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 44%,rgba(255,240,190,.22) 50%,transparent 56%);background-size:250% 250%;animation:sheen 3.5s linear infinite}
+.npc.gold-c .badge{display:inline-block;font-family:var(--mono);font-size:.58rem;letter-spacing:.3em;padding:.2rem .7rem;border-radius:20px;margin-bottom:.4rem;background:linear-gradient(90deg,#f4dd8e,#caa23f);color:#2a1f08;font-weight:800}
+.npc.gold-c .nm{font-size:1.6rem;color:#f4dd8e}
+.npc.iris-c{grid-column:1/-1;border:3px solid transparent;background:linear-gradient(#0e0f16,#0e0f16) padding-box,conic-gradient(from var(--ang,0deg),#ff5f6d,#ffc371,#7ee8a2,#3aafff,#b06bff,#ff5f6d) border-box;animation:pop .6s cubic-bezier(.2,1.3,.4,1) forwards,spinBorder 4s linear infinite;box-shadow:0 0 56px rgba(180,140,255,.5);overflow:hidden}
+.npc.iris-c::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);background-size:250% 250%;animation:sheen 2.6s linear infinite}
+.npc.iris-c::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.12;background:conic-gradient(from 0deg,#ff5f6d,#ffc371,#7ee8a2,#3aafff,#b06bff,#ff5f6d)}
+@property --ang{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes spinBorder{to{--ang:360deg}}
+@keyframes sheen{to{background-position:-150% -150%}}
+.npc.iris-c .badge{position:relative;display:inline-block;font-family:var(--mono);font-size:.62rem;letter-spacing:.32em;padding:.22rem .8rem;border-radius:20px;margin-bottom:.45rem;background:linear-gradient(90deg,#ff5f6d,#ffc371,#7ee8a2,#3aafff,#b06bff);background-size:220% auto;color:#14110a;font-weight:800;animation:shift 3s linear infinite}
+@keyframes shift{to{background-position:220% center}}
+.npc.iris-c .nm{position:relative;font-size:1.9rem;background:linear-gradient(90deg,#ff8a93,#ffd79b,#9bf0c3,#8cc4ff,#cf9bff);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shift 4s linear infinite}
+.npc.gold-c .grid2,.npc.iris-c .grid2{display:grid;gap:.7rem 1.4rem;position:relative}
+@media(min-width:560px){.npc.gold-c .grid2,.npc.iris-c .grid2{grid-template-columns:1fr 1fr}}
+.npc.iris-c .role{color:#ffd79b}.npc.iris-c .mt,.npc.iris-c .k{color:#b9b2d0}
+
+.cutin-overlay{position:fixed;inset:0;z-index:200;pointer-events:none;opacity:0;transition: opacity 0.15s ease}
+.cutin-overlay.active{opacity:1;pointer-events:auto}
+.cutin-bg{position:absolute;inset:0;background:#000;opacity:0}
+.cutin-flash{position:absolute;inset:0;opacity:0}
+.cutin-flash.gold-f{background:radial-gradient(circle,#fff0be,#e6c067 40%,transparent 70%)}
+.cutin-flash.iris-f{background:conic-gradient(from 0deg,#ff5f6d,#ffc371,#7ee8a2,#3aafff,#b06bff,#ff5f6d)}
+.cutin-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--serif);font-size:clamp(2rem,10vw,5rem);font-weight:900;letter-spacing:.2em;opacity:0;text-shadow:0 0 30px rgba(255,255,255,0.8), 0 0 60px currentColor}
+.cutin-subtext{font-size: clamp(1rem, 3vw, 1.8rem); font-family: var(--mono); font-weight: 800; letter-spacing: 0.4em; margin-top: 1rem; color: #fff; text-shadow: 0 0 10px #000}
+.cutin-text.gold-t{color:#f4dd8e}
+.cutin-text.iris-t{background:linear-gradient(90deg,#ff8a93,#ffd79b,#9bf0c3,#8cc4ff,#cf9bff);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shift 1s linear infinite}
+.cutin-crack{position:absolute;inset:0;opacity:0;overflow:hidden}
+.cutin-crack .line{position:absolute;background:rgba(255,255,255,.9);box-shadow:0 0 20px 6px rgba(255,255,255,.7),0 0 60px 12px rgba(180,140,255,.5)}
+.cutin-particle{position:absolute;width:6px;height:6px;border-radius:50%;background:#fff;box-shadow:0 0 10px 3px rgba(180,140,255,.7);opacity:0}
+.flash-layer{position:fixed;inset:0;z-index:150;pointer-events:none;opacity:0;mix-blend-mode:screen}
+.flash-layer.gold-fl{background:radial-gradient(circle,#fff0be,#e6c067 40%,transparent 70%)}
+.flash-layer.iris-fl{background:conic-gradient(from 0deg,#ff5f6d,#ffc371,#7ee8a2,#3aafff,#b06bff,#ff5f6d)}
+.flash-layer.go{animation:flashBoom 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) forwards}
+@keyframes flashBoom{0%{opacity:0;transform:scale(.1);border-radius:50%}15%{opacity:1}40%{opacity:0.8;transform:scale(1.2);border-radius:20px}100%{opacity:0;transform:scale(2.5);border-radius:0}}
+.confetti{position:fixed;z-index:160;pointer-events:none;width:10px;height:14px;top:-20px}
+
+/* デバッグ用UIスタイル */
+.debug-toggle-btn { position: fixed; bottom: 10px; left: 10px; background: #222; border: 1px solid #444; color: #888; font-size: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; z-index: 999; font-family: var(--mono); }
+.debug-toggle-btn.active { background: #8a1a1a; color: #fff; border-color: #f55; }
+.debug-panel { position: fixed; bottom: 40px; left: 10px; background: rgba(10,12,20,0.95); border: 2px dashed #f55; border-radius: 8px; padding: 10px; z-index: 998; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+.debug-panel h4 { font-size: 11px; margin-bottom: 6px; color: #f55; font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; }
+.debug-btns { display: flex; flex-direction: column; gap: 5px; }
+.debug-btn { background: #1c1f30; border: 1px solid #3b4261; color: var(--ink); padding: 5px 10px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: bold; text-align: left; }
+.debug-btn:hover { background: #2b304a; }
+.debug-btn.iris-dbg { border-color: #b06bff; color: #cf9bff; }
+.debug-btn.gold-dbg { border-color: #caa23f; color: #f4dd8e; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">TTRPG / Story GM Tool</div>
+    <h1>NPCガチャ</h1>
+    <div class="sub">CAPSULE ROSTER ULTRA PREMIUM</div>
+  </header>
+  <div class="panel">
+    <div class="controls">
+      <div class="ctl-title">World</div>
+      <div class="modes">
+        <button class="mode on" data-mode="modern" aria-pressed="true">現代</button>
+        <button class="mode" data-mode="fantasy" aria-pressed="false">ファンタジー</button>
+      </div>
+      <div class="ctl-title">Flavor</div>
+      <div class="checks" id="checks">
+        <label class="check on" data-tone="horror" tabindex="0"><span class="box"></span><span class="emoji">🩸</span>シリアス・ホラー</label>
+        <label class="check on" data-tone="comedy" tabindex="0"><span class="box"></span><span class="emoji">🎭</span>コメディ・ギャグ</label>
+        <label class="check" data-tone="school" tabindex="0"><span class="box"></span><span class="emoji">🎒</span>学校生活</label>
+        <label class="check" data-tone="daily" tabindex="0"><span class="box"></span><span class="emoji">☕</span>日常</label>
+      </div>
+      <div class="hint-mix">2つ以上選ぶと雰囲気が混ざったキャラも出ます。</div>
+      <div class="rates">N 96% / <b class="g">GOLD 3%</b> / <b class="r">IRIS 1%</b></div>
+    </div>
+    <div class="machine-area">
+      <div class="machine" id="machineContainer">
+        <div class="crown"><div class="crown-gems"><span class="r"></span><span class="b"></span><span class="gm"></span></div></div>
+        <div class="dome-wrap">
+          <div class="dome" id="dome"><div class="dome-ring"></div><div class="capsules-in" id="capsulesIn"></div></div>
+        </div>
+        <div class="m-body"><div class="m-body-frame"></div>
+          <div class="plate">Capsule Roster</div>
+          <div class="slot" id="machineSlot"></div>
+          <div class="knob-wrap"><div class="knob" id="knob" role="button" tabindex="0" aria-label="ガチャを回す"><div class="knob-cross"></div></div></div>
+        </div>
+        <div class="feet"><div class="foot"></div><div class="foot"></div></div>
+      </div>
+      <div class="hint" id="hint">ハンドルを回す → 3人 排出</div>
+    </div>
+  </div>
+  <div class="results" id="results"></div>
+</div>
+
+<div class="cutin-overlay" id="cutin">
+  <div class="cutin-bg" id="cutinBg"></div>
+  <div class="cutin-crack" id="cutinCrack"></div>
+  <div class="cutin-flash" id="cutinFlash"></div>
+  <div class="cutin-text" id="cutinText"></div>
+</div>
+<div class="flash-layer" id="flashLayer"></div>
+
+<button class="debug-toggle-btn" id="debugToggle">DEBUG MODE: OFF</button>
+<div class="debug-panel" id="debugPanel">
+  <h4>⚙️ Tester Menu</h4>
+  <div class="debug-btns">
+    <button class="debug-btn iris-dbg" id="dbgIris">🌈 虹レア(IRIS) 確定ガチャ</button>
+    <button class="debug-btn gold-dbg" id="dbgGold">👑 金レア(GOLD) 確定ガチャ</button>
+    <button class="debug-btn" id="dbgNormal">⚪ 通常(NORMAL) ガチャ</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var CC=["#e8553b","#f2a93b","#4cc2a8","#5b8dd6","#c96bb0","#7a6cd6"];
+var GR=.03,IR=.01,FR=.12;
+var forceResult = null; // デバッグ用強制フラグ
+
+var cI=document.getElementById("capsulesIn");
+for(var ci=0;ci<14;ci++){var mm=document.createElement("div");mm.className="mini";if(ci===6)mm.classList.add("iris-m");else if(ci===3)mm.classList.add("gold-m");mm.style.background=CC[ci%CC.length];cI.appendChild(mm)}
+
+/* ================== 名前・二つ名データベース ================== */
+var JS=["佐倉","東城","白瀬","二階堂","御園生","真壁","円城寺","綾辻","須田","三隅","常磐","片倉","间宮","葛西","深見","荻原","八雲","鷺沢","水城","羽鳥","久遠","硯","柊","蜂須賀","鵜飼","深山","小鳥遊","一ノ瀬","桜庭","橘","神崎","朝霧","天羽","霧島","皆川","宇佐美","氷室","九条","如月","七瀬","望月","不知火","有栖川","冬木","九頭竜","西園寺","鳴海","日向","明智","藤堂","皇","阿澄","獅子堂","薬師丸","千影","雨宮","霞ヶ関","京極","千堂","隠岐"];
+var JM=["透","怜","隼人","巧","郁夫","聡史","直人","暁","誠一","廉","蓮","湊","樹","槙","了","奏","悠真","壱晴","海斗","蒼","陸","凌","響","晴","匠","圭","拓海","琉生","瑛太","大和","和希","遥臣","一輝","冬馬","倫太郎","冴島","泰智","朔夜","伊織","千尋"];
+var JF=["澄","紗良","真琴","千歳","紬","遥","史緒","柚","環","凪","小夜","睦","茜","綴","澪","ひかり","栞","佳乃","琴音","結衣","美月","葉月","つむぎ","陽菜","朔","詩織","心音","舞冬","彩葉","莉子","美緒","小春","奈央","夕夏","ほのか","紗季","凛花","舞衣","亜美","梓"];
+var FS=["スミス","ミュラー","アンダーソン","ロッシ","ガルシア","コワルスキ","ノヴァク","リンドベリ","オブライエン","ベルナール","シュナイダー","モレッティ","フィッシャー","ヤンセン","カーター","ペトロフ","ハミルトン","ルクレール","ゴンザレス","レイノルズ","マクドナルド","バルボサ","コリンズ","ハワード","ベッカー","ディアス"];
+var FM=["アレクセイ","リアム","マテオ","ヨハン","ニコ","エミール","ダニエル","ラウル","トマ","アンドレ","セルゲイ","オスカー","イーサン","ルーカス","レオ","アレン","ギルバート","サイモン","マックス","ハル","オリバー","フェリックス","ノートン","ハヴィ","クラウス"];
+var FF=["エマ","ソフィア","クラーラ","イレーネ","アナスタシア","レナ","ミア","ノラ","ヘレナ","ユーリア","カミーユ","フレヤ","オリヴィア","アリア","エレナ","クロエ","ルナ","シルヴィア","アリス","ニーナ","エルザ","シャロット","クラリス","ベアトリス","マーガレット"];
+
+var FE=["風の","灰被りの","二つ名なき","北街道の","古井戸の","欠け月の","鐘突き","旅の","紫煙の","片目の","名残の","黄昏の","鉄の","銀嶺の","深緑の","常闇の","虚空の","白銀の","落日の","迷い子の","星詠みの","百戦錬磨の","世界樹の","錆び付いた","裏折れの","紅蓮の","忘却の","始まりの","微睡みの","小さき","大槌の","鍵守りの","嵐を呼ぶ","断罪の","黄金の","泥に塗れた","深海の","残光の","歪んだ","双頭の"];
+var TM=["アルヴィス","ゲオルグ","ロウェン","ティーグ","ブランド","セドリック","ヨナス","ガレス","ミルコ","オズ","レンディ","ファル","クヴェル","ダグ","イェスタ","ハルヴァル","ジーク","カイル","ヴァン","ラグナ","キース","シオン","レオン","ディラン","イザーク","バルト","イグニス","ウーヴェ","ジェラルド","ユーリ","クラウス","トール","ハインリヒ","アベル","ボリス"];
+var TF=["リーゼ","ノエラ","ミラベル","シスカ","ファイネ","ロッテ","アイナ","ユーリエ","セシル","ヴェル","ニーナ","エルマ","トーヴェ","クレア","ソルヴェ","リン","ティナ","フィーナ","メル","ルシア","イリス","ミレーヌ","シャロン","エレノア","ティファ","セリア","メルディ","フローラ","ブリジット","ヘルガ","シルヴァ","ヒルダ","ソニア","ルクレツィア","ロザリー"];
+
+function p(a){return a[Math.floor(Math.random()*a.length)]}
+var mode="modern";
+function gN(fs){
+  var s=fs||(Math.random()<.5?"m":"f");
+  var fo=Math.random()<FR;
+  var n,mt;
+  if(mode==="modern"){
+    if(fo)n=p(FS)+"・"+p(s==="f"?FF:FM);
+    else n=p(JS)+" "+p(s==="f"?JF:JM);
+    mt=(18+Math.floor(Math.random()*60))+"歳 / "+(s==="f"?"女性":"男性");
+  }else{
+    var pl=fo?(s==="f"?FF:FM):(s==="f"?TF:TM);
+    n=p(FE)+p(pl);
+    mt=(s==="f"?"♀":"♂")+" · 異郷の住人";
+  }
+  return{name:n,meta:mt,sex:s};
+}
+
+var R={modern:{
+  horror:["失踪課の刑事","終末病棟の看護師","遺品整理業者","廃ビルの管理人","夜間救急の受付","解体現場の監督","事故物件専門の不動産屋","深夜ラジオのDJ","身元不明者を扱う検死助手","廃線跡を巡る元駅員","誰も来ない教会の管理人","古文書の鑑定士","都市伝説を追うライター","心霊スポットの常連","閉鎖病棟の元患者","行方不明者の家族会代表","深夜の公園に佇む老人","監視カメラの保守員","裏路地の闇医者","呪物を預かる質屋の店主","カルト宗教の脱退支援カウンセラー","ネットの噂を買い取る怪しい男","血痕専門の特殊清掃員","怪異現象を調べる興信所の調査員","古い防空壕の跡地を監視する男"],
+  comedy:["やる気ゼロのコンビニ店長","町内一の噂好き","万年補欠の草野球おじさん","情に脆い借金取り","通販中毒の主婦","自称カリスマ美容師","近所の名物クレーマー","副業を七つ掛け持つ便利屋","当たらない占い師","自称・伝説のナンパ師","何でも拾ってくる近所のおじさん","リアクション芸人志望の学生","行列に並ぶことが趣味の老人","値札を付け間違えるフリマ出店者","道を聞かれやすい顔の会社員","懸賞生活を極めた年金暮らし","絶対に定時で消えるシステムエンジニア","声が無駄にダンディな実況アナウンサー","変なTシャツしか着ないデザイナー","鳩と会話できるフリをする浮浪者","世界征服を企む（つもりの）フリーター","いつも何かに謝っている中間管理職"],
+  school:["保健室の常連","生徒会の影の実力者","購買のカリスマおばちゃん","部活の鬼コーチ","転校してきた無口な子","学年一の遅刻魔","図書委員の読書家","応援団長","美術室に住む先輩","成績トップの委員長","屋上の常連","放送部のアナウンサー","昼休み専門の屋上占い師","体育倉庫の鍵を持つ生徒","弁当が豪華すぎる転校生","誰の味方かわからない副会長","部室棟の幽霊と噂される卒業生","早弁の達人","常に赤点ギリギリの天才プログラマー","他校の制服を着て紛れ込んでいる不審学生","オカルト研究会の頼りない部長","いつも教科書を忘れる不良風の少年","放課後の化学室に籠もる奇妙な特待生"],
+  daily:["商店街の魚屋","個人タクシーの運転手","行きつけ喫茶のマスター","訪問介護士","区役所の窓口職員","クリーニング店主","図書館の司書","世話焼きの大家","銭湯の番台","パン屋の早朝担当","花屋の店員","町工場の溶接工","散歩が日課の元教師","犬の散歩仲間の代表","移動販売の焼き芋屋","朝市で野菜を売る農家","駅前の靴磨き職人","毎朝同じベンチにいる老紳士","地元の小さな交番の巡査","いつも気だるげな古本屋の店主","裏山の神社を守る若い神職","土手沿いを毎日走る郵便配達員","路地裏の猫すべてに名前をつけている主婦"]
+},fantasy:{
+  horror:["呪具を扱う裏稼業の商人","墓守を継いだ寡黙な娘","疫病の出た村の生き残り","封印を見張る老いた神官","森で客を導く正体不明の案内人","記憶を失った辻占い","死者の名を刻む石工","廃坑に住み着いた元鉱夫","深淵を覗く灯台守","人形を作り続ける老婆","禁域の番人","夢を喰う宿屋の主","月のない夜だけ開く薬屋","魂を量る天秤の管理人","影を縫い付ける仕立て屋","肉体のパーツを売る錬金術師","沈黙の誓いを立てた狂信者","奈落から生還した隻眼の斥候","生贄を運ぶ黒馬車の御者","主を亡くした古い迷宮の案内人"],
+  comedy:["注文を必ず間違える宿屋の主人","勇者に憧れる気弱な見習い","値切りに弱い行商人","酒場で武勇伝を盛る元傭兵","薬と毒をよく取り違える錬金術師","看板娘ぶる強面の店主","自称・伝説の冒険者","おだてに弱い門番","借金取りに追われる吟遊詩人","使い魔に馬鹿にされる魔術師","地図を読めない案内人","嘘の宝の地図を売る詐欺師","スライムをペットにしている老人","頭の固いゴーレムに愚痴る学者","すぐ気絶するオークの料理人","宝箱のフリをしてサボるシーフ","神託を適当にでっち上げる見習い巫女"],
+  school:["魔法学院の落ちこぼれ","世間知らずの貴族子弟","図書塔の司書見習い","実技だけは天才の問題児","学院の噂を握る寮母","田舎出の新入生","使い魔に振り回される生徒","補習常連の劣等生","実験で校舎を壊す常習犯","他校からのスパイ疑惑の転入生","寮の屋根裏に住む謎の上級生","入学試験を運だけで突破した新入り","古代語しか喋れない呪文学の教授","幻獣の世話に追われる飼育担当","夜な夜な時計塔で密造酒を作る生徒","箒の飛行試験で何度も墜落する少女"],
+  daily:["広場の角のパン焼き職人","村に一人の蹄鉄打ち","街道沿いの宿の女将","薬草を商う森の住人","荷馬車を引く運び屋","教会の鐘を守る老人","井戸端の洗濯婦","旅芸人の笛吹き","港で網を繕う漁師","城壁の上で見張る兵士","広場の似顔絵描き","渡し船の船頭","風車小屋の偏屈な職人","果樹園を営むエルフの若者","鉱石を仕分ける職人気質のドワーフ","街頭の灯りを消して回る夜警","古い井戸の水を汲み続ける少年"]
+}};
+var SP={modern:{
+  horror:["言葉を選びすぎて間が長い。目を合わせない。","事務的で感情の温度が一定。","本題に入ると急に声を潜める。","昨日の出来事を毎回違う日付で語る。","ふと黙り込み別の話を始める。","低い声で聞き返すと答えが変わる。","笑うタイミングが半拍ずれている。","相手の名前を呼ぶとき必ず一度ためらう。","ぼそぼそと早口で喋り、時折後ろを気にする。","まるで最初から結末を知っているような口ぶり。"],
+  comedy:["話の9割が自慢か脱線。声がデカい。","語尾が「〜じゃん?」。やたら同意を求める。","オチをつけないと喋り終われない。","横文字を使いたがるが半分間違い。","自分のことを三人称で呼ぶ。","聞かれてないことまで喋る。","例例え話が全部食べ物。","会話中にスマホを見て「あっ」と言う。","やたらと身振り手振りが大きく、すぐ息が切れる。","何かを隠そうとして墓穴を掘り続ける喋り方。"],
+  school:["敬語とタメ口が一文で混ざる。","流行り言葉を一拍遅れて使う。","照れると早口になって聞き取れない。","声は小さいが芯のあることを言う。","やたら略語を使う。","真面目すぎて冗談が通じない。","語尾がいつも質問形。","目上の人にだけ態度が急変する。","けだるそうに髪をいじりながら喋る。","ノートの端に落書きをしながら、こちらの話を聞いている。"],
+  daily:["下町訛りで陽気。世間話が長い。","何を聞いても「そうねえ」から始まる。","落ち着いた低い声。聞き上手。","せっかちで要点だけを早口で。","語尾に必ず一言添える癖がある。","昔話に必ず脱線する。","相槌が独特で真意が読めない。","褒めるのが上手く誰からも好かれる。","飴玉を差し出しながら、こちらの緊張をほぐすように喋る。","常に笑顔だが、目の奥だけが全く笑っていない。"]
+},fantasy:{
+  horror:["低くかすれた声。言い終わりが消え入る。","核心に触れると口をつぐみ話をそらす。","古い言い回しで要領を得ない。","目を合わせず何かに怯えている。","同じ祈りの言葉を繰り返す。","問うたびに答えの細部が変わる。","一人称が会話中に変わる。","語りかけているのが目の前の相手ではなさそう。","歯の抜けた口元を隠し、くつくつと不気味に笑う。","まるでガラス細工に触れるかのように慎重な言葉遣い。"],
+  comedy:["大言壮語だが肝心なところで腰が引ける。","話が脇道に逸れ本題に戻ってこない。","妙に芝居がかった言い回しを好む。","訛りが強く半分は聞き取れない。","自慢話の数字が会うたび増える。","景気のいい掛け声から入る。","嘘が下手で顔に全部出る。","返事はいいが話を聞いていない。","自分の武器や道具に名前をつけて話しかけている。","胸を張りすぎて後ろにひっくり返りそうになる。"],
+  school:["背伸びした難しい言葉を使いたがる。","緊張すると噛む。早口になる。","素直で思ったことをすぐ口に出す。","物静かだが知識を問えば饒舌になる。","語尾に呪文じみた口癖がつく。","先輩風を吹かせたがる。","教科書の一節をよく引用する。","誰にでも敬語で距離感が独特。","羽ペンを回すのに夢中で、こちらの質問を聞き流す。","ローブの裾を踏んで転びそうになりながら大声を出す。"],
+  daily:["朴訥で温かい。世間話が好き。","商売っ気が強く何でも売り込んでくる。","落ち着いた口調で土地の事情に詳しい。","威勢がよく声が遠くまで通る。","昔語りが長く要点が後回し。","客あしらいが軽やかで調子がいい。","天気の話から必ず入る。","ことわざを多用するが微妙に間違える。","パイプの煙をくゆらせながら、のんびりと相槌を打つ。","手を叩いて豪快に笑い、すぐに作業に戻ってしまう。"]
+}};
+var W={modern:{
+  horror:["毎晩戻ってくる“それ”を家に入れたくない","失踪した同僚の足取りを掴みたい","担当した相手の最期に間に合いたい","誰にも言えない秘密を抱えきれずにいる","三年前に終わった仕事をまだ続けている","鏡の中の自分が一拍遅れる理由を知りたい","あの日聞いた音の正体を確かめたい","夢に出てくる場所を見つけたい","背後に立つ影の正体を、自分以外の誰かに証明したい","古いビデオテープに映った『自分』を消し去りたい"],
+  comedy:["万馬券を当てて一発逆転したい","町内会の役員を全力で回避したい","推しの限定グッズを死守したい","ご近所に自慢できるネタが欲しい","ダイエットを今度こそ成功させたい","バズって店を有名にしたい","合コンで一勝したい","隣の家より立派な庭を作りたい","お気に入りの靴下が片方だけ消える謎を解明したい","怪しい通販で買った『絶対に笑う壺』を返品したい"],
+  school:["気になるあの子と同じ班になりたい","バレずに早退して遊びに行きたい","次のテストだけは赤点を回避したい","一度でいいからレギュラーになりたい","卒業までにこの想いを伝えたい","誰にも言えない夢を諦めたくない","文化祭を最高の思い出にしたい","あの先生に認められたい","屋上の鍵を管理している用務員と仲良くなりたい","自分が書いた黒歴史ノートを職員室から回収したい"],
+  daily:["定時で帰って録画を観たい","腰痛を治す名医を探している","娘の受験が無事に終わってほしい","常連客との会話を今日も楽しみたい","店を畳む前に常連へ挨拶したい","遠くの孫に会いに行きたい","庭の花を枯らさず育てたい","昔の友人と再会したい","今夜の夕飯のおかずを何にするか死ぬほど悩んでいる","お気に入りの喫茶店が閉店するのをなんとか阻止したい"]
+},fantasy:{
+  horror:["村に降りかかった災いの正体を知りたい","失われた肉親の行方を追っている","背負った呪いから解き放たれたい","封印が解けるのをただ恐れている","死んだはずの者の声をまた聞いた","名を失う前に誰かに憶えていてほしい","消えゆく記憶の中で大切な顔を思い出したい","森の奥で待つ“約束”を果たしたい","代々伝わる魔導書の、最後の1ページを破り捨てたい","夜になると勝手に動く自分の右手を切り落としたい"],
+  comedy:["一山当てて店を大きくしたい","英雄譚の主役に名を連ねたい","厄介な借りを誰かに肩代わりしてほしい","祭りの目玉になる珍品を探している","逃げた恋人を取り戻したい","ツケを踏み倒した客を捕まえたい","竜に見つからずに宝を持ち帰りたい","酒場で一番うまい酒を見つけたい","使い魔の猫に握られた弱みを消し去りたい","伝説のスパイスを手に入れて、究極のスープを作りたい"],
+  school:["憧れの先輩に実力を認められたい","落第だけはなんとか免れたい","禁書庫の本をこっそり読みたい","家の名に恥じぬ成績を取りたい","卒業試験を一緒に乗り越える仲間が欲しい","隠した才能を誰かに見つけてほしい","学院の七不思議を全て解き明かしたい","あの日見た魔法をもう一度使いたい","実験室を爆破した犯人に仕立て上げられた濡れ衣を晴らしたい","自分が召喚してしまった変な生き物の正体を知りたい"],
+  daily:["今年の収穫が無事に終わってほしい","旅人から外の世界の話を聞きたい","息子に家業を継いでほしい","馴染みの客に良い品を届けたい","遠い街の親類に便りを送りたい","祭りまでに仕事を片付けたい","嵐の前に羊を全頭囲いに入れたい","新しいレシピを完成させたい","街道に居座る凶暴なイノシシを誰かに退治してほしい","失くしてしまった先代の形見の指輪を見つけ出したい"]
+}};
+var H={modern:{
+  horror:["事件現場の第一発見者だが半分しか覚えていない。","重要な手がかりを知らずに持ち帰っている。","主人公の過去を知る最後の証人。","本人も気づかぬうち異変に巻き込まれている。","既に手遅れだが周囲も本人も気づいていない。","街の違和感を唯一はっきり覚えている。","同じ夢を見続けていると打ち明けてくる。","主人公と同じ傷痕を持っている。"],
+  comedy:["勘違いで主人公を有名人だと思い込んでいる。","情報と引き換えに無茶な頼みごとをしてくる。","良かれと思って事態を引っかき回す。","絶妙にズレた助言で場を混乱させる。","巻き込まれ体質でいつも現場にいる。","頼んでもいないのに勝手に協力者を名乗る。","証拠品を勝手に捨ててしまう。","毎回違う名前を名乗る。"],
+  school:["放課後の秘密を偶然知ってしまった。","主人公に密かに憧れている後輩。","重要な噂の発信源だが自覚がない。","頼れば必ず力を貸してくれる委員。","事件の鍵を握る落とし物を拾った。","誰にも言えない悩みを抱え助けを待っている。","主人公のロッカーに手紙を入れた人物。","卒業アルバムに写っていない生徒。"],
+  daily:["主人公の隣人。生活音から異変に気づく。","街の小さな変化を誰より早く察知する。","昔主人公の家族に世話になった恩がある。","聞けば何でも教えてくれる街の生き字引。","常連客の噂を運んでくる情報源。","困りごとを持ち込むと放っておけない性分。","毎朝同じ時間に挨拶してくる律儀さ。","引っ越してきたばかりで土地勘がない。"]
+},fantasy:{
+  horror:["災いの鍵を握る品を知らずに手にしている。","旅人を導くふりで別の場所へ誘い込む。","村で唯一真実を覚えている者。","既に人ならざるものに触れられている。","封印の在処を知る最後の生き証人。","触れた者の記憶を少しずつ薄れさせる。","夜ごと同じ歌を口ずさんでいる。","影が本人と違う動きをしている。"],
+  comedy:["主人公を伝説の英雄と勘違いしている。","報酬代わりに無茶な依頼を押し付ける。","善意の空回りで一行を巻き込む。","噂話を盛って事態をややこしくする。","行く先々で偶然鉢合わせる。","勝手に一行の語り部を名乗る。","宝箱を開けると毎回この人が入っている。","一行の食料を勝手に食べる。"],
+  school:["立ち入り禁止区域の秘密を知っている。","主人公にこっそり憧れる下級生。","学院の事件の思わぬ目撃者。","頼れば力を貸す面倒見のいい先輩格。","禁呪の手がかりを偶然書き写していた。","重い秘密を抱え打ち明ける相手を探している。","呪いで動物に変えられた元生徒。","試験問題を事前に知っているらしい。"],
+  daily:["土地の言い伝えを誰より詳しく語れる。","街道の異変に最初に気づいた住人。","昔主人公の縁者に恩がある。","旅の補給と情報を任せられる街の顔役。","遠方の噂を運んでくる旅商人。","困った者を見ると放っておけない人柄。","毎年同じ時期に旅に出る理由がある。","一行に手作りの弁当を持たせてくれる。"]
+}};
+
+var GP={modern:[
+  {title:"影の立役者",role:"物語を裏で動かす策士",desc:"穏やかな物腰の裏で街の人間関係を読み切っている。敵にも味方にもなりうる油断ならない知性。",quote:"さて、君はどちらの役を演じるつもりかな。"},
+  {title:"哀しき協力者",role:"過去に傷を負った相棒格",desc:"訳ありの過去を抱えながら主人公に手を貸す。信頼を得れば最も頼れる存在になる。",quote:"昔の俺なら、君を見捨てていただろうな。"},
+  {title:"街の生き字引",role:"全てを知る古老",desc:"この土地で起きた出来事を何十年分も記憶している。問えば必ず核心の一片を返してくれる。",quote:"その話なら、私が誰より詳しいとも。"},
+  {title:"裏切りの匂い",role:"味方のフリをする内通者",desc:"一見頼れる協力者に見えるが背後で別の誰かに情報を流している。真意は最後まで見えない。",quote:"信じてくれるのは嬉しいが……油断はしないほうがいい。"},
+  {title:"沈黙の観察者",role:"全てを見ているが語らない者",desc:"どの陣営にも属さずただ見ている。その沈黙が重要な局面で意味を持ち始める。",quote:"私は何も言わない。だが、何も見逃さない。"},
+  {title:"厄災の運び屋",role:"知らずに災いを招く善人",desc:"本人に悪意は一切ない。だが関わる者すべてに不運が訪れるという噂がある。",quote:"ごめんなさい。また、迷惑をかけてしまったみたい。"}
+],fantasy:[
+  {title:"流浪の賢者",role:"知の探求者",desc:"世界を巡り失われた知識を集めてきた。一行に決定的な助言を与える物語の道標。",quote:"知識は剣より重い。扱える者にしか渡せん。"},
+  {title:"誇り高き騎士",role:"名のある剣の使い手",desc:"信念のために剣を握る歴戦の戦士。義に厚く認めた相手には命を預ける覚悟がある。",quote:"その願い、剣に懸ける価値があるかどうか――見せてもらおう。"},
+  {title:"宿命の語り部",role:"予言を継ぐ者",desc:"古き予言を口伝で受け継ぐ者。その言葉は物語の行く先をそっと指し示す。",quote:"これは始まりに過ぎぬ。本当の試練はこの先だ。"},
+  {title:"仮面の商人",role:"情報と富を操る影",desc:"何でも売り買いする謎の商人。代価は金だけではなく時に秘密や記憶を求めてくる。",quote:"お求めの品はございますよ。ただし、代価はそれ相応に。"},
+  {title:"追放された王子",role:"故国を失った元王族",desc:"かつて栄華を極めた王国の末裔。名を隠して旅をしているが高貴な振る舞いが時折にじむ。",quote:"王座など要らぬ。だが民だけは――守りたかった。"},
+  {title:"深淵の歩哨",role:"闇の境界を巡る番人",desc:"人が踏み入れてはならない領域との境界に立つ者。一行に致命的な警告を発する役割を持つ。",quote:"引き返すなら今だ。この先は――保証できん。"}
+]};
+
+var IP={modern:[
+  {kind:"主人公",sex:"m",role:"物語の中心に立つ者",desc:"平凡を装いながら誰もが運命を託したくなる輝きを秘めている。この物語は彼を軸に回り始める。選択を迫られた時に見せる眼光は本物。",quote:"――ここから先は、俺が引き受ける。お前は後ろで見てな。"},
+  {kind:"メインヒロイン",sex:"f",role:"物語の心臓",desc:"その存在が登場人物すべての選択を左右する。守りたいと思わせる強さと隠された秘密を併せ持つ。世界の命運の鍵をその身に宿す少女。",quote:"あなたとなら、どんな結末でも怖くないよ。たとえ世界を敵に回しても。"},
+  {kind:"ラスボス",sex:"m",role:"全ての元凶にして頂点",desc:"街の異変すべての糸を握っていた張本人。圧倒的な格と抗いがたい理屈で対峙する者を呑み込む。圧倒的な絶対強者としてのオーラを放つ。",quote:"ようやく、舞台に役者が揃ったね。さあ、私を退屈させないでくれよ？"},
+  {kind:"宿敵",sex:"m",role:"主人公の対となる存在",desc:"かつて同じ道を歩いた者。今は相容れない道を行くが誰より主人公を理解し冷徹に刃を向ける。互いの信念が激突する宿命のライバル。",quote:"お前がここに来ることは、最初からわかっていた。……どちらが正しいか、今決めよう。"},
+  {kind:"黒幕ヒロイン",sex:"f",role:"裏側から物語を動かす者",desc:"微笑みの下に鋼の意志を隠す。表向きは味方だが彼女こそが全ての仕掛け人かもしれない。すべては彼女の掌の上で踊らされていたのだ。",quote:"ねえ、最初から全部――わたしが仕組んだとしたら？ どんな顔をしてくれる？"},
+  {kind:"復讐者",sex:"m",role:"過去に全てを奪われた者",desc:"失ったものを取り戻すためだけに生きてきた。その執念は味方にも脅威となる。どす黒い殺意と圧倒的な戦闘技術を併せ持つ狂犬。",quote:"赦す？――そんな言葉、とうの昔に捨てた。あの男の命を喰らうまで、俺の渇きは収まらん。"}
+],fantasy:[
+  {kind:"勇者",sex:"m",role:"世界の希望を背負う者",desc:"伝説に選ばれし者。剣を抜けば戦況が変わり立ち上がれば人々が後に続く。物語そのものを動かす存在。その背中はあまりにも大きい。",quote:"この剣が折れるまで、退くつもりはない！ 世界の闇は、俺がここで断ち切る！"},
+  {kind:"運命の姫",sex:"f",role:"世界の鍵を握る乙女",desc:"血脈に世界の理を宿す姫。その身の行方が王国の興亡を決定づける。ただ守られるだけでなく、自らも運命に立ち向かう凛とした少女。",quote:"わたしの運命、あなたに預けてもいい？ 代わりに、私は私のすべてであなたを支えます。"},
+  {kind:"魔王",sex:"m",role:"世界を統べる絶対者",desc:"すべての災いの根源にして世界の頂点に立つ者。最後に待つ超えるべき壁。神にも等しい絶望的な魔力で侵入者を蹂躙する。",quote:"よくぞここまで来た。誉れは称えよう。だが――終わりは私が決める。滅びよ。"},
+  {kind:"堕天の聖女",sex:"f",role:"光と闇の狭間に立つ者",desc:"かつて世界を守った聖なる存在。今その力は闇に侵され救うべきか討つべきか究極の選択を迫る。悲痛な微笑みを浮かべる悲劇の聖女。",quote:"まだ、わたしを救えると思う？……嬉しいな。でもね、もう遅いの。わたしと一緒に堕ちて？"},
+  {kind:"不死の王",sex:"m",role:"時を超えて君臨する覇者",desc:"何百年も前から世界の影に座し時代が変わっても玉座を譲らない骸骨の王。無限の時間を生き、人類の歴史をただの娯楽として眺める存在。",quote:"何度でも倒せばいい。私は何度でも還る。お前たちの短い歴史など、我が刹那の羽撃きに過ぎん。"},
+  {kind:"反逆の騎士",sex:"m",role:"正義のために王に刃を向けた者",desc:"誰よりも忠誠を誓った騎士が王の堕落を見て剣を向けた。その選択が世界を二つに割る。背徳の汚名を背負いながらも己の正義を貫く孤高の剣士。",quote:"守るべきものを間違えた王に、もう膝は折れん。この手が逆賊の血に染まろうとも、私は引かぬ！"}
+]};
+
+var TS={horror:"シリアス",comedy:"コメディ",school:"学校",daily:"日常"};
+var aT=function(){return Array.from(document.querySelectorAll(".check.on")).map(function(c){return c.dataset.tone})};
+
+document.querySelectorAll(".mode").forEach(function(b){
+  b.addEventListener("click",function(){
+    document.querySelectorAll(".mode").forEach(function(x){
+      x.classList.remove("on");
+      x.setAttribute("aria-pressed", "false");
+    });
+    b.classList.add("on");
+    b.setAttribute("aria-pressed", "true");
+    mode=b.dataset.mode;
+  });
+});
+
+function toggleCheck(c) {
+  c.classList.toggle("on");
+}
+document.querySelectorAll(".check").forEach(function(c){
+  c.addEventListener("click",function(){ toggleCheck(c); });
+  c.addEventListener("keydown",function(e){
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleCheck(c); }
+  });
+});
+
+function mN(tones){
+  var pr=p(tones),sc=null;
+  if(tones.length>1&&Math.random()<.55){var ot=tones.filter(function(t){return t!==pr});sc=p(ot)}
+  var nm=gN(),ft=sc||pr;
+  return{tier:"normal",name:nm.name,meta:nm.meta,sex:nm.sex,
+    role:p(R[mode][pr]),speech:p(SP[mode][ft]),
+    want:p(W[mode][Math.random()<.5?pr:ft]),
+    hook:p(H[mode][sc?p([pr,sc]):pr]),
+    tones:sc?[pr,sc]:[pr]};
+}
+function mG(){var g=p(GP[mode]);var nm=gN();return{tier:"gold",name:nm.name,meta:nm.meta,title:g.title,role:g.role,desc:g.desc,quote:g.quote}}
+function mI(){var r=p(IP[mode]);var nm=gN(r.sex);return{tier:"iris",name:nm.name,meta:nm.meta,kind:r.kind,role:r.role,desc:r.desc,quote:r.quote}}
+
+var cE=document.getElementById("cutin"),cB=document.getElementById("cutinBg"),cF=document.getElementById("cutinFlash"),cT=document.getElementById("cutinText"),cC=document.getElementById("cutinCrack"),fL=document.getElementById("flashLayer");
+
+function goldCutin(){return new Promise(function(res){cE.classList.add("active");cF.className="cutin-flash gold-f";cT.className="cutin-text gold-t";cT.innerHTML="★ GOLD ★<div class='cutin-subtext'>NAMED CHARACTER</div>";cB.animate([{opacity:0},{opacity:.85},{opacity:.85},{opacity:0}],{duration:1200,fill:"forwards"});cF.animate([{opacity:0},{opacity:0,offset:.3},{opacity:.9,offset:.5},{opacity:0}],{duration:1200,fill:"forwards"});cT.animate([{opacity:0,transform:"scale(3)"},{opacity:0,transform:"scale(3)",offset:.35},{opacity:1,transform:"scale(1)",offset:.55},{opacity:1,transform:"scale(1)",offset:.75},{opacity:0,transform:"scale(.8)"}],{duration:1200,fill:"forwards",easing:"cubic-bezier(.2,1.3,.4,1)"});setTimeout(function(){cE.classList.remove("active");cB.style.opacity=0;res()},1300)})}
+
+function irisCutin(){
+  return new Promise(function(res){
+    cE.classList.add("active");
+    cF.className="cutin-flash iris-f";
+    cT.className="cutin-text iris-t";
+    cT.innerHTML="";
+    cC.innerHTML="";
+    cC.style.opacity=0;
+
+    cB.animate([
+      {opacity:0, offset:0},
+      {opacity:0.9, offset:0.1},
+      {opacity:0.4, offset:0.15},
+      {opacity:0.95, offset:0.3},
+      {opacity:0.2, offset:0.4},
+      {opacity:1, offset:0.5},
+      {opacity:1, offset:1}
+    ],{duration:1500, fill:"forwards"});
+
+    setTimeout(function(){ fL.className="flash-layer iris-fl go"; }, 200);
+    setTimeout(function(){ fL.className="flash-layer"; }, 700);
+    setTimeout(function(){ fL.className="flash-layer iris-fl go"; }, 800);
+    setTimeout(function(){ fL.className="flash-layer"; }, 1300);
+
+    setTimeout(function(){
+      fL.className="flash-layer iris-fl go";
+      cC.style.opacity="1";
+      for(var i=0;i<30;i++){
+        var l=document.createElement("div");
+        l.className="line";
+        var a=Math.random()*360,cx=30+Math.random()*40,cy=30+Math.random()*40;
+        l.style.cssText="left:"+cx+"%;top:"+cy+"%;width:0;height:"+ (4+Math.random()*6) +"px;transform-origin:left center;transform:rotate("+a+"deg); color: #fff;";
+        cC.appendChild(l);
+        l.animate([{width:"0"},{width:"150vw"}],{duration:150+i*30,fill:"forwards",easing:"cubic-bezier(0.1, 1, 0.2, 1)"});
+      }
+      for(var j=0;j<60;j++){
+        var q=document.createElement("div");
+        q.className="cutin-particle";
+        q.style.cssText="left:"+(20+Math.random()*60)+"%;top:"+(20+Math.random()*60)+"%; background: conic-gradient(#ff5f6d,#7ee8a2,#3aafff,#b06bff);";
+        cC.appendChild(q);
+        var dx=(Math.random()-.5)*180,dy=(Math.random()-.5)*180;
+        q.animate([{opacity:0,transform:"scale(0)"},{opacity:1,transform:"scale(3)",offset:.1},{opacity:0,transform:"translate("+dx+"vw,"+dy+"vh) scale(0)"}],{duration:800+Math.random()*600,fill:"forwards",delay:j*5});
+      }
+    },1500);
+
+    setTimeout(function(){
+      cF.animate([{opacity:0},{opacity:1,offset:.2},{opacity:.9,offset:.7},{opacity:0}],{duration:1600,fill:"forwards"});
+      cT.innerHTML="✦ IRIS ✦<div class='cutin-subtext' style='color:#ffe66d; text-shadow:0 0 10px #ff5f6d'>🏆 LEGENDARY STATUS 🏆</div>";
+      cT.animate([
+        {opacity:0,transform:"scale(8) rotate(-15deg)"},
+        {opacity:1,transform:"scale(1) rotate(0)",offset:.2},
+        {opacity:1,transform:"scale(1.15) rotate(0)",offset:.75},
+        {opacity:0,transform:"scale(0.5) rotate(5deg)"}
+      ],{duration:1600,fill:"forwards",easing:"cubic-bezier(0.15, 0.85, 0.35, 1)"});
+    },2000);
+
+    setTimeout(function(){
+      cB.animate([{opacity:1},{opacity:0}],{duration:500,fill:"forwards"});
+    },3300);
+
+    setTimeout(function(){
+      cE.classList.remove("active");
+      cB.style.opacity=0;
+      cC.style.opacity=0;
+      fL.className="flash-layer";
+      res();
+    },3800);
+  });
+}
+
+function spawnPhysicalCapsule(tier) {
+  return new Promise(function(resolve) {
+    var capsule = document.createElement("div");
+    capsule.className = "ejected-capsule";
+    
+    if (tier === "iris") {
+      capsule.style.background = "conic-gradient(from 0deg, #ff5f6d, #ffc371, #7ee8a2, #3aafff, #b06bff, #ff5f6d)";
+      capsule.style.boxShadow = "0 0 30px rgba(255,255,255,0.8), inset 0 -8px 12px rgba(0,0,0,0.5)";
+    } else if (tier === "gold") {
+      capsule.style.background = "linear-gradient(135deg, #fbf3da, #e6c067, #b8923c)";
+      capsule.style.boxShadow = "0 0 20px rgba(230,192,103,0.8), inset 0 -8px 12px rgba(0,0,0,0.5)";
+    } else {
+      capsule.style.background = p(CC);
+    }
+    
+    var slotRect = document.getElementById("machineSlot").getBoundingClientRect();
+    capsule.style.left = (slotRect.left + slotRect.width / 2) + "px";
+    capsule.style.top = (slotRect.top + slotRect.height / 2) + "px";
+    
+    document.body.appendChild(capsule);
+    capsule.style.animation = "capsuleEject 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards";
+    
+    setTimeout(function() {
+      capsule.remove();
+      resolve();
+    }, 1100);
+  });
+}
+
+var knob=document.getElementById("knob"),dome=document.getElementById("dome"),hint=document.getElementById("hint"),results=document.getElementById("results");
+var busy=false;
+
+function sl(ms){return new Promise(function(r){setTimeout(r,ms)})}
+
+function roll(){
+  if(busy)return;var tones=aT();
+  if(tones.length===0){hint.innerHTML='<span class="err">雰囲気を1つ以上選んでね</span>';return}
+  busy=true;hint.textContent="ガチャガチャ…";
+  knob.classList.add("turning");dome.classList.add("shaking");
+  
+  var rT = null;
+  if (forceResult) {
+    rT = forceResult;
+  } else {
+    var r = Math.random();
+    if(r<IR) rT="iris"; else if(r<IR+GR) rT="gold";
+  }
+  
+  var rI=rT?Math.floor(Math.random()*3):-1;
+  
+  sl(800).then(function(){
+    dome.classList.remove("shaking");
+    if(rT==="iris"){
+      dome.classList.add("charge-iris");
+      knob.classList.remove("turning");
+      return sl(1200).then(function(){ 
+        dome.classList.remove("charge-iris"); 
+        return spawnPhysicalCapsule("iris");
+      }).then(function(){
+        return irisCutin(); 
+      });
+    }
+    else if(rT==="gold"){
+      dome.classList.add("charge-gold");
+      knob.classList.remove("turning");
+      return sl(400).then(function(){ 
+        dome.classList.remove("charge-gold"); 
+        return spawnPhysicalCapsule("gold");
+      }).then(function(){
+        return goldCutin(); 
+      });
+    }
+    else{
+      knob.classList.remove("turning");
+      return spawnPhysicalCapsule("normal").then(function(){ return sl(150); });
+    }
+  }).then(function(){
+    results.innerHTML="";var npcs=[];
+    for(var i=0;i<3;i++){if(i===rI)npcs.push(rT==="iris"?mI():mG());else npcs.push(mN(tones))}
+    if(rT){
+      fL.className="flash-layer "+(rT==="iris"?"iris-fl":"gold-fl")+" go";
+      sC(rT);
+      setTimeout(function(){fL.className="flash-layer"},1200);
+    }
+    npcs.forEach(function(n,i){fR(n,i)});
+    hint.textContent=rT==="iris"?"🌈🌈 虹レア降臨！全宇宙が祝福している！ 🌈🌈":rT==="gold"?"★ ゴールド — ネームド排出! ★":"ハンドルを回す → 3人 排出";
+    setTimeout(function(){busy=false},1100);
+  });
+}
+
+function fR(n,i){
+  var color=CC[i%CC.length];
+  var slot=document.getElementById("machineSlot").getBoundingClientRect();
+  var fly=document.createElement("div");
+  fly.className="fly"+(n.tier==="iris"?" iris":n.tier==="gold"?" gold":"");
+  if(n.tier==="normal")fly.style.background=color;
+  
+  var startLeft = slot.left + window.scrollX + slot.width / 2 - 28;
+  var startTop = slot.top + window.scrollY;
+  fly.style.left=startLeft+"px";fly.style.top=startTop+"px";
+  
+  document.body.appendChild(fly);
+  var dx=Math.random()*120-60;
+  fly.animate([{transform:"translate(0,0) scale(.6)",opacity:0},{transform:"translate("+(dx*.4)+"px,40px) scale(1.1)",opacity:1,offset:.3},{transform:"translate("+dx+"px,260px) scale(1)",opacity:1,offset:.85},{transform:"translate("+dx+"px,320px) scale(.4)",opacity:0}],{duration:720+i*120,easing:"cubic-bezier(.4,0,.4,1)"});
+  setTimeout(function(){fly.remove()},720+i*120);
+  setTimeout(function(){
+    var el=document.createElement("div");
+    var modeLabel=mode==="modern"?"現代":"ファンタジー";
+    if(n.tier==="iris"){
+      el.className="npc iris-c";
+      el.innerHTML='<div class="badge">✦ IRIS ✦ '+n.kind+'</div><div class="nm">'+n.name+'</div><div class="mt">'+n.meta+' · 主役級</div><div class="role">'+n.role+'</div><div class="grid2"><div class="f"><span class="k">Profile</span><div class="v">'+n.desc+'</div></div><div class="f"><span class="k">Signature line</span><div class="v q">「'+n.quote+'」</div></div></div><div class="tags"><span class="tag">IRIS 1%</span><span class="tag">'+modeLabel+'</span><span class="tag">'+n.kind+'</span></div>';
+    } else if(n.tier==="gold"){
+      el.className="npc gold-c";
+      el.innerHTML='<div class="badge">★ GOLD ★ ネームド</div><div class="nm">'+n.name+'</div><div class="mt">'+n.meta+' · '+n.title+'</div><div class="role">'+n.role+'</div><div class="grid2"><div class="f"><span class="k">Profile</span><div class="v">'+n.desc+'</div></div><div class="f"><span class="k">Signature line</span><div class="v q">「'+n.quote+'」</div></div></div><div class="tags"><span class="tag">GOLD 3%</span><span class="tag">'+modeLabel+'</span><span class="tag">ネームド級</span></div>';
+    } else {
+      el.className="npc";
+      var tH=n.tones.map(function(t){return '<span class="tag">'+TS[t]+'</span>'}).join("");
+      var mx=n.tones.length>1?'<span class="tag" style="color:var(--gold);border-color:var(--gold)">'+TS[n.tones[0]]+'×'+TS[n.tones[1]]+'</span>':"";
+      el.innerHTML='<div class="cap" style="background:'+color+'"></div><div class="mt">No.'+String(i+1).padStart(2,"0")+'</div><div class="nm">'+n.name+'</div><div class="mt">'+n.meta+'</div><div class="role">'+n.role+'</div><div class="f"><span class="k">Voice</span><div class="v">'+n.speech+'</div></div><div class="f"><span class="k">Wants</span><div class="v q">「'+n.want+'」</div></div><div class="f"><span class="k">Hook</span><div class="v">'+n.hook+'</div></div><div class="tags">'+(mx||tH)+'</div>';
+    }
+    results.appendChild(el);
+    requestAnimationFrame(function(){el.classList.add("show")});
+  },420+i*150);
+}
+
+function sC(tier){
+  var cols=tier==="iris"?["#ff5f6d","#ffc371","#7ee8a2","#3aafff","#b06bff","#ffe66d"]:["#f4dd8e","#e6c067","#caa23f","#fff0be","#b8923c"];
+  var ct=tier==="iris"?150:55;
+  for(var i=0;i<ct;i++){
+    var c=document.createElement("div");c.className="confetti";
+    c.style.left=Math.random()*100+"vw";c.style.background=cols[i%cols.length];
+    c.style.transform="rotate("+Math.random()*360+"deg)";
+    document.body.appendChild(c);
+    var vy=60+Math.random()*40,vr=Math.random()*720;
+    c.animate([{transform:"translateY(0) rotate(0)",opacity:1},{transform:"translateY("+vy+"vh) rotate("+vr+"deg)",opacity:0}],{duration:1700+Math.random()*1300,easing:"cubic-bezier(.3,.6,.5,1)"});
+    (function(el){setTimeout(function(){el.remove()},3000)})(c);
+  }
+}
+
+/* ================== デバッグモード用ロジック ================== */
+var dbgToggle = document.getElementById("debugToggle");
+var dbgPanel = document.getElementById("debugPanel");
+
+dbgToggle.addEventListener("click", function() {
+  if (dbgPanel.style.display === "block") {
+    dbgPanel.style.display = "none";
+    dbgToggle.textContent = "DEBUG MODE: OFF";
+    dbgToggle.classList.remove("active");
+    forceResult = null;
+  } else {
+    dbgPanel.style.display = "block";
+    dbgToggle.textContent = "DEBUG MODE: ON";
+    dbgToggle.classList.add("active");
+  }
+});
+
+document.getElementById("dbgIris").addEventListener("click", function() { if(busy){busy=false;} forceResult = "iris"; roll(); });
+document.getElementById("dbgGold").addEventListener("click", function() { if(busy){busy=false;} forceResult = "gold"; roll(); });
+document.getElementById("dbgNormal").addEventListener("click", function() { if(busy){busy=false;} forceResult = null; roll(); });
+
+knob.addEventListener("click", function() { forceResult = null; roll(); }); 
+knob.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault(); forceResult = null; roll();}});
+})();
+</script>
+</body>
+</html>
