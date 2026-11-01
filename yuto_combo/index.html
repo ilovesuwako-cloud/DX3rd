@@ -138,6 +138,8 @@
 <label class="opt">Lv補正 <select id="levelRule"><option value="auto">自動（ロイス欄の起源種を判別）</option><option value="normal">通常</option><option value="origin">起源種</option></select></label></div>
 <label class="opt">装飾テンプレート<select id="textDecorationPreset" aria-label="装飾テンプレート"></select></label>
 <p class="hint">テンプレートを選ぶと上下の装飾を変更します。選択後も下の欄で自由に編集できます。</p>
+<label class="opt">コンボ名の装飾セット<select id="textTitlePreset"></select></label>
+<div class="controls"><label>コンボ名の左装飾<input id="textTitleLeft" list="comboTitleLeftOptions" value="◤" autocomplete="off"></label><label>コンボ名の右装飾<input id="textTitleRight" list="comboTitleRightOptions" value="◢" autocomplete="off"></label></div>
 <label for="comboStartDecoration" style="font-size:12.5px;color:var(--text-dim)">コンボ上側の装飾（空欄で省略）</label>
 <input type="text" id="comboStartDecoration" value="✿････････○････････✿････････○････････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
 <label for="comboEndDecoration" style="font-size:12.5px;color:var(--text-dim)">コンボ下側の装飾（空欄で省略）</label>
@@ -189,8 +191,9 @@
 <div class="manual-fields">
 <label>上側の装飾<input id="manualTop" value="✿････････○････････✿････････○････････✿"></label>
 <label>下側の装飾<input id="manualBottom" value="✿････････●････････✿････････●････････✿"></label>
-<label>コンボ名の左装飾<input id="manualTitleLeft" value="◤"></label>
-<label>コンボ名の右装飾<input id="manualTitleRight" value="◢"></label>
+<label>コンボ名の装飾セット<select id="manualTitlePreset"></select></label>
+<label>コンボ名の左装飾<input id="manualTitleLeft" list="comboTitleLeftOptions" value="◤" autocomplete="off"></label>
+<label>コンボ名の右装飾<input id="manualTitleRight" list="comboTitleRightOptions" value="◢" autocomplete="off"></label>
 </div>
 <label>補足（任意・改行可）<textarea id="manualNotes" style="min-height:85px" placeholder="コンボ外効果や使用条件など"></textarea></label>
 <label>条件の出力<select id="manualConditionMode"><option value="combined">条件をまとめる</option><option value="separate">条件別に分ける</option></select></label>
@@ -206,6 +209,8 @@
 <datalist id="manualRangeOptions"><option value="至近"></option><option value="武器"></option><option value="視界"></option><option value="10m"></option><option value="20m"></option><option value="30m"></option><option value="50m"></option><option value="100m"></option><option value="300m"></option><option value="効果参照"></option><option value="―"></option></datalist>
 <datalist id="manualCostOptions"><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option><option value="8"></option><option value="9"></option><option value="10"></option><option value="1D10"></option><option value="2D10"></option><option value="4D10"></option><option value="0"></option><option value="効果参照"></option><option value="―"></option></datalist>
 <datalist id="manualLimitOptions"><option value="―"></option><option value="80%"></option><option value="100%"></option><option value="120%"></option><option value="リミット"></option><option value="ピュア"></option><option value="Dロイス"></option><option value="RB"></option><option value="効果参照"></option></datalist>
+<datalist id="comboTitleLeftOptions"><option value="◤"></option><option value="◣"></option><option value="《"></option><option value="【"></option><option value="〈"></option><option value="『"></option><option value="「"></option><option value="〔"></option><option value="≪"></option><option value="✦"></option><option value="❖"></option><option value="◇"></option></datalist>
+<datalist id="comboTitleRightOptions"><option value="◢"></option><option value="◥"></option><option value="》"></option><option value="】"></option><option value="〉"></option><option value="』"></option><option value="」"></option><option value="〕"></option><option value="≫"></option><option value="✦"></option><option value="❖"></option><option value="◇"></option></datalist>
 </section>
 <footer>ゆとシート↔コンボ整形ツール · Double Cross 3rd</footer></div><script>"use strict";
 const $ = id => document.getElementById(id);
@@ -223,6 +228,16 @@ const DECORATION_PRESETS=[
  {name:'ハートリボン',top:'♡ ─── ⋈ ─── ♡ ─── ⋈ ─── ♡',bottom:'♥ ─── ⋈ ─── ♥ ─── ⋈ ─── ♥'},
  {name:'照準',top:'＋────┬──〈  ◇  〉──┬────＋',bottom:'＋────┴──〈  ◆  〉──┴────＋'},
  {name:'シンプル二重線',top:'╔═════════◇═════════╗',bottom:'╚═════════◆═════════╝'}
+];
+const TITLE_PRESETS=[
+ [1,'◤','◢'],[2,'◥','◤'],[3,'◣','◢'],[4,'◢','◣'],[16,'⟦','⟧'],
+ [18,'⌈','⌉'],[19,'⌊','⌋'],[20,'──','──'],[21,'━','━'],[22,'═','═'],
+ [23,'◇','◇'],[24,'◆','◆'],[25,'◈','◈'],[26,'❖','❖'],[27,'✦','✦'],
+ [28,'✧','✧'],[29,'✶','✶'],[30,'✷','✷'],[31,'✴','✴'],[32,'⋆','⋆'],
+ [33,'☆','☆'],[34,'★','★'],[35,'❀','❀'],[36,'✿','✿'],[37,'❁','❁'],
+ [38,'❃','❃'],[39,'♡','♡'],[40,'♥','♥'],[41,'♠','♠'],[42,'♣','♣'],
+ [43,'☾','☽'],[44,'☽','☾'],[45,'†','†'],[46,'‡','‡'],[47,'⚔','⚔'],
+ [48,'⚡','⚡'],[49,'⌖','⌖'],[50,'⊹','⊹']
 ];
 function textDisplayWidth(text){return Array.from(text).reduce((n,c)=>n+(/[\u0020-\u007e\uff61-\uff9f]/.test(c)?1:2),0);}
 function conditionEffectLines(primary,damage,extras=[]){
@@ -331,9 +346,9 @@ function externalEffectSummary(text){
  const modifiers=text.match(/(?:攻撃力|ダイス|達成値|C値)\s*[+＋\-－−ｰ]\s*\d+(?:個|D)?/g);
  return modifiers?modifiers.join('／'):text;
 }
-function decoratedComboTitle(name){
+function decoratedComboTitle(name,left='◤',right='◢'){
  const m=name.match(/^[｜|]\s*(.*?)\s*《([^》]+)》\s*$/);
- return m?[`◤${m[1].trim()}◢`,m[2].trim()]:[`《${name}》`];
+ return m?[`${left}${m[1].trim()}${right}`,m[2].trim()]:[`${left}${name}${right}`];
 }
 function formulaDescription(text){
  return removeRuby(text).replace(/\bLV\b/gi,'Lv').replace(/[\[［]([^\]］]*Lv[^\]］]*)[\]］]/g,'$1').replace(/×/g,'*')
@@ -378,7 +393,7 @@ function variableCost(effects,fallback){
  for(const e of effects){const cost=arithmetic(e.cost);if(cost===null)return fallback;if(/重ねて使用可能/.test(e.effect))variables.push(`(${displayEffectName(e.name)}×${cost})`);else fixed+=cost;}
  return [String(fixed),...variables].join('+');
 }
-function createTextPalette(sheet,rule,weapon,endDecoration='✿････････●････････✿････････●････････✿',startDecoration='✿････････○････････✿････････○････････✿',conditionMode='combined'){
+function createTextPalette(sheet,rule,weapon,endDecoration='✿････････●････････✿････････●････････✿',startDecoration='✿････････○････････✿････････○････････✿',conditionMode='combined',titleLeft='◤',titleRight='◢'){
  const origin=rule==='origin'||(rule==='auto'&&sheet.origin);const stages=origin?[{label:'80%未満',at:0,b:0},{label:'80%以上',at:80,b:1},{label:'100%以上',at:100,b:2}]:[{label:'100%未満',at:0,b:0},{label:'100%以上',at:100,b:1}];
  if(!origin&&sheet.combos.some(c=>/80[%％]以上/.test(c.condition))){stages[0].label='80%未満';stages.splice(1,0,{label:'80%以上',at:80,b:0});}
  const warnings=new Set(['試作：自然文の効果を完全には解釈できません。生成式と原文を照合し、未反映の補正は手入力してください。']),lines=[],seen=new Set(),groups=new Map();
@@ -433,7 +448,7 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
   }
   const groupKey=JSON.stringify([combo.name,combo.refs,combo.skill,combo.target,combo.range,combo.cost,...(conditionMode==='separate'?[stage.label]:[])]);
   if(!groups.has(groupKey)){
-   const title=decoratedComboTitle(combo.name);
+   const title=decoratedComboTitle(combo.name,titleLeft,titleRight);
    if(conditionMode==='separate')title[0]+=`（${stage.label}）`;
    const header=[...(startDecoration?[startDecoration]:[]),...title,'',...wrapComboEffects(body[3],startDecoration,endDecoration),...body.slice(4,6)];
    groups.set(groupKey,{header,summaries:[],external:[],rolls:[],cost});
@@ -469,6 +484,13 @@ function setupDecorationPresets(selectId,topId,bottomId){
  select.addEventListener('change',()=>{if(select.value==='custom')return;const preset=DECORATION_PRESETS[Number(select.value)];top.value=preset.top;bottom.value=preset.bottom;});
  top.addEventListener('input',sync);bottom.addEventListener('input',sync);sync();
 }
+function setupTitlePresets(selectId,leftId,rightId){
+ const select=$(selectId),left=$(leftId),right=$(rightId);
+ select.replaceChildren(...TITLE_PRESETS.map(([number,l,r])=>new Option(`${number}：${l}コンボ名${r}`,String(number))),new Option('自由編集','custom'));
+ const sync=()=>{const match=TITLE_PRESETS.find(([,l,r])=>l===left.value&&r===right.value);select.value=match?String(match[0]):'custom';};
+ select.addEventListener('change',()=>{const match=TITLE_PRESETS.find(([number])=>String(number)===select.value);if(match){left.value=match[1];right.value=match[2];}});
+ left.addEventListener('input',sync);right.addEventListener('input',sync);sync();
+}
 const sheetDrop=$('sheetText');
 let sheetFileLoad=0;
 function isFileDrag(event){return Array.from(event.dataTransfer?.types||[]).includes('Files');}
@@ -502,13 +524,16 @@ $('scanWeapons').addEventListener('click',scanTextWeapons);
 $('convertText').addEventListener('click',()=>{
  try{
  const sheet=readSheet($('sheetText').value);const ix=$('weaponChoice').value;const weapon=ix===''?null:sheet.weapons[Number(ix)];
- const result=createTextPalette(sheet,$('levelRule').value,weapon,$('comboEndDecoration').value,$('comboStartDecoration').value,$('textConditionMode').value);$('decorated').value=result.commands;
+ const result=createTextPalette(sheet,$('levelRule').value,weapon,$('comboEndDecoration').value,$('comboStartDecoration').value,$('textConditionMode').value,$('textTitleLeft').value,$('textTitleRight').value);$('decorated').value=result.commands;
  $('textWarnings').textContent=[`Lv補正：${result.origin?'起源種':'通常'}／生成：${sheet.combos.length}コンボ（段階別に展開）`,...result.warnings].join('\n');
  }catch(e){setStatus('テキスト変換に失敗：'+e.message,'err');}
 });
 $('copyDecorated').addEventListener('click',async()=>{try{if(!$('decorated').value)throw new Error('先にコンボを生成してください。');await navigator.clipboard.writeText($('decorated').value);setStatus('装飾チャパレをコピーしました。','ok');}catch(e){$('decorated').focus();$('decorated').select();setStatus('コピーできませんでした。選択されたテキストをCtrl+Cでコピーしてください。','err');}});
 setupDecorationPresets('textDecorationPreset','comboStartDecoration','comboEndDecoration');
 setupDecorationPresets('manualDecorationPreset','manualTop','manualBottom');
+setupTitlePresets('textTitlePreset','textTitleLeft','textTitleRight');
+setupTitlePresets('manualTitlePreset','manualTitleLeft','manualTitleRight');
+for(const [listId,index] of [['comboTitleLeftOptions',1],['comboTitleRightOptions',2]])$(listId).replaceChildren(...[...new Set(TITLE_PRESETS.map(p=>p[index]))].map(value=>new Option(value,value)));
 
 function manualSigned(value){value=String(value).trim();return !value?'':/^[+\-－−]/.test(value)?value:'+'+value;}
 function generateManualCombo(data){
