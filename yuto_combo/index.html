@@ -231,9 +231,10 @@ function conditionEffectLines(primary,damage,extras=[]){
  for(const extra of extras)for(const item of String(extra||'').split(/\\n|\r?\n|[、／/]/)){if(item.trim())lines.push('|'+item.trim()+'|');}
  return lines;
 }
-function automaticConditionLines(summary){
+function automaticConditionLines(summary,hasHit=false){
  const primary=[],damage=[],extras=[];
  for(const item of summary.split('／')){
+  if(hasHit&&/^(?:ガード(?:値)?|装甲(?:値)?)(?:[:：+＋\-－−ｰ]|\d)/.test(item))continue;
   if(/^(?:ダイス|C値|C[-－−]|達成値)/.test(item))primary.push(item.replace(/^C([-－−])/, 'C値$1'));
   else if(/^(?:攻撃力|ダメージ)/.test(item))damage.push(item);
   else extras.push(item);
@@ -438,7 +439,7 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
    groups.set(groupKey,{header,summaries:[],external:[],rolls:[],cost});
   }
   const group=groups.get(groupKey);
-  group.summaries.push(`▼${stage.label}`,...automaticConditionLines(stageEffectSummary(parts)));
+  group.summaries.push(`▼${stage.label}`,...automaticConditionLines(stageEffectSummary(parts),Boolean(combo.hit&&combo.hit.trim())));
   const externalIndex=body.indexOf('【コンボ外効果】');
   if(externalIndex>=0)group.external.push(`${stage.label}：`,...body.slice(externalIndex+1));
   group.rolls.push(...rolls);
