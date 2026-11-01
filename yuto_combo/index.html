@@ -143,11 +143,61 @@
 <button class="btn-ghost" id="copyDecorated">装飾チャパレをコピー</button>
 <pre id="textWarnings" style="white-space:pre-wrap;color:var(--warn);font-size:12px"></pre>
 </div></section>
+<section class="card" id="manualCombo" style="margin-top:22px">
+<h2>手入力でコンボを作成</h2>
+<div class="body">
+<p class="hint">タイミング・技能・難易度・対象・射程・侵蝕値・制限は候補選択と自由入力に対応しています。候補にない値もそのまま入力できます。数値・式は入力した内容を使います。ダイスには侵蝕B込みの式（例：4+侵蝕B）、攻撃力には追加ダイスも入力できます（例：11+3D10）。</p>
+<style>
+#manualCombo .manual-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+#manualCombo label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text-dim)}
+#manualCombo input{width:100%;padding:9px 10px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font:13px var(--mono)}
+#manualCombo .manual-table{overflow-x:auto}
+#manualCombo table{width:100%;border-collapse:collapse;min-width:700px}
+#manualCombo th,#manualCombo td{padding:6px;text-align:left;font-size:12px}
+#manualCombo th{color:var(--text-dim)}
+#manualPreview{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--ink);padding:14px;border-radius:8px;font-size:13px}
+</style>
+<div class="manual-fields">
+<label>コンボ名<input id="manualName" placeholder="コンボ名を入力"></label>
+<label>読み（任意）<input id="manualReading" placeholder="読みを入力（省略可）"></label>
+<label>組み合わせエフェクト<input id="manualEffects" placeholder="《エフェクトA》＋《エフェクトB》"></label>
+<label>タイミング<input id="manualTiming" list="manualTimingOptions" autocomplete="off" placeholder="候補から選択、または自由入力"></label>
+<label>技能<input id="manualSkill" list="manualSkillOptions" autocomplete="off" placeholder="候補から選択、または自由入力"></label>
+<label>難易度<input id="manualDifficulty" list="manualDifficultyOptions" autocomplete="off" placeholder="候補から選択、または自由入力"></label>
+<label>対象<input id="manualTarget" list="manualTargetOptions" autocomplete="off" placeholder="候補から選択、または自由入力"></label>
+<label>射程<input id="manualRange" list="manualRangeOptions" autocomplete="off" placeholder="候補から選択、または自由入力"></label>
+<label>侵蝕値<input id="manualCost" list="manualCostOptions" autocomplete="off" placeholder="候補から選択、または式を入力"></label>
+<label>制限（任意）<input id="manualLimit" list="manualLimitOptions" autocomplete="off" placeholder="候補から選択、または自由入力（省略可）"></label>
+</div>
+<div id="manualStages" style="display:flex;flex-direction:column;gap:12px"></div>
+<div class="controls"><label>追加する条件の種類<select id="manualStageType"><option value="attack">攻撃用</option><option value="support">バフ／デバフ用</option></select></label><button class="btn-ghost" id="manualAddStage">条件行を追加</button></div>
+<p class="hint">バフ／デバフの操作量は符号付きで入力できます（例：-10、+4）。空欄の項目は出力しません。</p>
+<div class="manual-fields">
+<label>上側の装飾<input id="manualTop" value="✿･･････○･･････✿･･････○･･････✿"></label>
+<label>下側の装飾<input id="manualBottom" value="✿･･････●･･････✿･･････●･･････✿"></label>
+<label>コンボ名の左装飾<input id="manualTitleLeft" value="◤"></label>
+<label>コンボ名の右装飾<input id="manualTitleRight" value="◢"></label>
+</div>
+<label>補足（任意・改行可）<textarea id="manualNotes" style="min-height:85px" placeholder="コンボ外効果や使用条件など"></textarea></label>
+<div class="actions"><button class="btn-go" id="manualGenerate">チャパレを生成</button><button class="btn-ghost" id="manualAppend">生成して出力末尾に追加</button></div>
+<label>チャパレ出力（編集可）<textarea id="manualOutput" spellcheck="false" style="min-height:200px"></textarea></label>
+<button class="btn-copy" id="manualCopy">手入力チャパレをコピー</button>
+<p id="manualStatus" role="status" class="hint">装飾メッセージと各条件のロールを別行で出力します。データはこのページ内でのみ保持されます。</p>
+<details><summary>送信時の表示プレビュー</summary><div id="manualPreview"></div></details>
+</div><datalist id="manualTimingOptions"><option value="セットアップ"></option><option value="イニシアチブ"></option><option value="マイナー"></option><option value="メジャー"></option><option value="リアクション"></option><option value="オート"></option><option value="クリンナップ"></option><option value="常時"></option><option value="メジャー／リアクション"></option><option value="メジャー／オート"></option><option value="効果参照"></option><option value="―"></option></datalist>
+<datalist id="manualSkillOptions"><option value="白兵"></option><option value="回避"></option><option value="運転："></option><option value="射撃"></option><option value="知覚"></option><option value="芸術："></option><option value="RC"></option><option value="意志"></option><option value="知識："></option><option value="交渉"></option><option value="調達"></option><option value="情報："></option><option value="運転：騎乗動物"></option><option value="運転：四輪"></option><option value="情報：UGN"></option><option value="情報：FH"></option><option value="肉体"></option><option value="感覚"></option><option value="精神"></option><option value="社会"></option><option value="白兵／射撃"></option><option value="シンドローム"></option><option value="効果参照"></option><option value="―"></option></datalist>
+<datalist id="manualDifficultyOptions"><option value="自動成功"></option><option value="対決"></option><option value="効果参照"></option><option value="―"></option></datalist>
+<datalist id="manualTargetOptions"><option value="自身"></option><option value="単体"></option><option value="2体"></option><option value="3体"></option><option value="範囲"></option><option value="範囲（選択）"></option><option value="シーン"></option><option value="シーン（選択）"></option><option value="効果参照"></option><option value="―"></option></datalist>
+<datalist id="manualRangeOptions"><option value="至近"></option><option value="武器"></option><option value="視界"></option><option value="10m"></option><option value="20m"></option><option value="30m"></option><option value="50m"></option><option value="100m"></option><option value="300m"></option><option value="効果参照"></option><option value="―"></option></datalist>
+<datalist id="manualCostOptions"><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option><option value="8"></option><option value="9"></option><option value="10"></option><option value="1D10"></option><option value="2D10"></option><option value="4D10"></option><option value="0"></option><option value="効果参照"></option><option value="―"></option></datalist>
+<datalist id="manualLimitOptions"><option value="―"></option><option value="80%"></option><option value="100%"></option><option value="120%"></option><option value="リミット"></option><option value="ピュア"></option><option value="Dロイス"></option><option value="RB"></option><option value="効果参照"></option></datalist>
+</section>
+
 <div class="grid">
     <section class="card">
       <h2>入力：ゆとシート ココフォリア用JSON <span class="tag">paste here</span></h2>
       <div class="body">
-        <textarea id="input" spellcheck="false" placeholder='ゆとシートの「ココフォリア出力」でコピーした JSON を貼り付け。&#10;{"kind":"character","data":{ ... ,"commands":"...●●●...●●●...","name":"…"}}'></textarea>
+        <textarea id="input" spellcheck="false" placeholder='ゆとシートの「ココフォリア出力」でコピーした JSON を貼り付け。&#10;{"kind":"character","data":{ ... ,"commands":"…","name":"キャラクター名"}}'></textarea>
         <div class="controls">
           <label class="opt"><input type="checkbox" id="optSkillBlank" checked> 専門技能の空欄行（情報:／運転: 等）を入れる</label>
           <label class="opt"><input type="checkbox" id="optCombo" checked> エフェクト/コンボを段階別に出力</label>
@@ -620,6 +670,14 @@ $("input").addEventListener("keydown", e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="
 
 
 
+
+
+
+
+
+
+
+
 // Text import deliberately does not evaluate arbitrary JavaScript from a sheet.
 function decodeSheet(s){return s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/<br\s*\/?>/gi,'\n');}
 function normalizedName(s){return s.replace(/\([^)]*\)|（[^）]*）/g,'').replace(/^[┗└\s]+/,'').replace(/コンセントレイト/g,'C').replace(/\s/g,'');}
@@ -858,6 +916,74 @@ $('convertText').addEventListener('click',()=>{
  }catch(e){setStatus('テキスト変換に失敗：'+e.message,'err');}
 });
 $('copyDecorated').addEventListener('click',async()=>{try{if(!$('decorated').value)throw new Error('先にコンボを生成してください。');await navigator.clipboard.writeText($('decorated').value);setStatus('装飾チャパレをコピーしました。','ok');}catch(e){$('decorated').focus();$('decorated').select();setStatus('コピーできませんでした。選択されたテキストをCtrl+Cでコピーしてください。','err');}});
+
+function manualSigned(value){value=String(value).trim();return !value?'':/^[+\-－−]/.test(value)?value:'+'+value;}
+function generateManualCombo(data){
+ if(!data.name.trim())throw new Error('コンボ名を入力してください。');
+ const title=data.titleLeft+data.name.trim()+data.titleRight;
+ const body=[...(data.top?[data.top]:[]),title,...(data.reading?[data.reading]:[]),''];
+ if(data.effects)body.push(data.effects);
+ const meta=[data.timing,data.skill?`〈${data.skill.replace(/[〈〉]/g,'')}〉`:'',data.difficulty].filter(Boolean).join('｜');
+ if(meta)body.push(meta);
+ const target=[data.target,data.range,data.cost?'侵蝕値：'+data.cost:'',data.limit?'制限：'+data.limit:''].filter(Boolean).join('｜');
+ if(target)body.push(target);
+ if(data.stages.length)body.push('');
+ const rolls=[];
+ for(const stage of data.stages){
+  if(!stage.condition.trim())throw new Error('各行の条件を入力してください。');
+  if(stage.type==='support'){
+   const modifiers=[['diceMod','ダイス','個'],['achievementMod','達成値',''],['criticalMod','C値',''],['attackMod','攻撃力',''],['damageMod','ダメージ','D'],['initiativeMod','行動値','']].filter(([key])=>String(stage[key]||'').trim()).map(([key,label,unit])=>label+manualSigned(stage[key])+unit);
+   const extra=String(stage.extra||'').trim().replace(/\r\n?|\n/g,'\\n');
+   body.push(stage.condition+'：'+(stage.scope||'')+[...modifiers,...(extra?[extra]:[])].join('／'));
+   continue;
+  }
+  const summary=[stage.dice?'ダイス：'+stage.dice:'',stage.crit?'C値：'+stage.crit:'',stage.achievement?'達成値'+manualSigned(stage.achievement):'',stage.attack?'攻撃力'+manualSigned(stage.attack):''].filter(Boolean);
+  if(String(stage.extra||'').trim())summary.push(stage.extra.trim().replace(/\r\n?|\n/g,'\\n'));
+  body.push(stage.condition+'：'+summary.join('／'));
+  if(stage.dice){if(!stage.crit)throw new Error('ダイスを入力した行にはC値も入力してください。');
+   const dice=stage.dice.replace(/(?<!\{)侵蝕B(?!\})/g,'{侵蝕B}');
+   rolls.push(`(${dice})DX${stage.crit}${manualSigned(stage.achievement)} 【${data.name}／${stage.condition}／命中判定】`);
+  }
+  if(stage.attack)rolls.push(`(命中判定の十の位+1)D10${manualSigned(stage.attack)} 【${data.name}／${stage.condition}／ダメージ判定】`);
+ }
+ if(data.notes)body.push('',...data.notes.replace(/\r\n?/g,'\n').split('\n'));
+ if(data.bottom)body.push(data.bottom);
+ return [body.join('\\n'),...(data.cost?[':侵蝕+'+data.cost]:[]),...rolls].join('\n');
+}
+// Manual editor UI
+function readManualStage(row){return {type:row.dataset.type,...Object.fromEntries(Array.from(row.querySelectorAll('input')).map(input=>[input.dataset.field,input.value.trim()]))};}
+function addManualStage(values={},afterRow=null){
+ const row=document.createElement('div');row.dataset.type=values.type||'attack';row.style.cssText='border:1px solid var(--line);border-radius:8px;padding:12px';
+ const heading=document.createElement('div');heading.textContent=row.dataset.type==='support'?'バフ／デバフ用条件':'攻撃用条件';row.appendChild(heading);
+ const fields=document.createElement('div');fields.className='manual-fields';
+ const columns=row.dataset.type==='support'?[['condition','条件'],['scope','効果期間・対象（例：ラウンド中、対象の）'],['diceMod','操作ダイス ±'],['achievementMod','操作達成値 ±'],['criticalMod','操作クリティカル値 ±'],['attackMod','操作攻撃力 ±'],['damageMod','操作ダメージD ±'],['initiativeMod','操作行動値 ±（任意）']]:[['condition','条件'],['dice','ダイス'],['crit','C値'],['achievement','達成値'],['attack','攻撃力']];
+ for(const [key,label] of columns){
+  const cell=document.createElement('label'),input=document.createElement('input');cell.appendChild(document.createTextNode(label));input.dataset.field=key;input.setAttribute('aria-label',label);input.value=values[key]||'';cell.appendChild(input);fields.appendChild(cell);
+ }
+ const extraLabel=document.createElement('label'),extra=document.createElement('input');extraLabel.textContent='自由入力（特殊効果など）';extra.dataset.field='extra';extra.setAttribute('aria-label','自由入力（特殊効果など）');extra.placeholder='装甲無視、ガード不可／対象は次の判定に適用';extra.value=values.extra||'';extraLabel.appendChild(extra);fields.appendChild(extraLabel);
+ row.appendChild(fields);
+ const actions=document.createElement('div');actions.className='controls';actions.style.marginTop='10px';
+ const duplicate=document.createElement('button');duplicate.className='btn-ghost';duplicate.textContent='この条件を複製';duplicate.addEventListener('click',()=>{const copy=addManualStage(readManualStage(row),row);const condition=copy.querySelector('[data-field="condition"]');condition.focus();condition.select();$('manualStatus').textContent='条件を直下に複製しました。条件名と変わる項目を編集してください。';});actions.appendChild(duplicate);
+ const button=document.createElement('button');button.className='btn-ghost';button.textContent='この条件を削除';button.addEventListener('click',()=>row.remove());actions.appendChild(button);row.appendChild(actions);
+ if(afterRow)afterRow.after(row);else $('manualStages').appendChild(row);
+ return row;
+}
+function readManualData(){
+ const data={};for(const key of ['name','reading','effects','timing','skill','difficulty','target','range','cost','limit','top','bottom','titleLeft','titleRight','notes'])data[key]=$('manual'+key[0].toUpperCase()+key.slice(1)).value.trim();
+ data.stages=Array.from($('manualStages').children).map(readManualStage);
+ return data;
+}
+function previewManual(){ $('manualPreview').textContent=$('manualOutput').value.split('\n')[0].replace(/\\n/g,'\n'); }
+function emitManual(append){try{const result=generateManualCombo(readManualData());{
+ if(!append&&$('manualOutput').value.trim()&&!confirm('現在の出力を、新しく生成した内容で置き換えますか？'))return;
+ $('manualOutput').value=append?[$('manualOutput').value.trim(),result].filter(Boolean).join('\n\n'):result;previewManual();$('manualStatus').textContent='チャパレを生成しました。数値・式を確認してコピーしてください。';
+ }}catch(e){$('manualStatus').textContent=e.message;}}
+$('manualAddStage').addEventListener('click',()=>addManualStage({type:$('manualStageType').value}));
+$('manualGenerate').addEventListener('click',()=>emitManual(false));
+$('manualAppend').addEventListener('click',()=>emitManual(true));
+$('manualOutput').addEventListener('input',previewManual);
+$('manualCopy').addEventListener('click',async()=>{try{if(!$('manualOutput').value)throw new Error('先にチャパレを生成してください。');await navigator.clipboard.writeText($('manualOutput').value);$('manualStatus').textContent='コピーしました。';}catch(e){$('manualOutput').focus();$('manualOutput').select();$('manualStatus').textContent='出力を選択しました。Ctrl+Cでコピーしてください。';}});
+addManualStage({condition:'100%未満',crit:'10'});addManualStage({condition:'100%以上',crit:'10'});
 
 </script>
 </body>
