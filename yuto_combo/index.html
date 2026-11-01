@@ -156,6 +156,12 @@
 #manualCombo th,#manualCombo td{padding:6px;text-align:left;font-size:12px}
 #manualCombo th{color:var(--text-dim)}
 #manualPreview{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--ink);padding:14px;border-radius:8px;font-size:13px}
+#manualCombo .modifier-control{display:flex;gap:4px;align-items:stretch}
+#manualCombo .modifier-control input{min-width:0;flex:1;appearance:textfield;-moz-appearance:textfield}
+#manualCombo .modifier-control input::-webkit-inner-spin-button,#manualCombo .modifier-control input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+#manualCombo .modifier-arrows{display:flex;flex-direction:column;gap:2px}
+#manualCombo .modifier-arrows button{padding:0 8px;font-size:10px;flex:1;border-radius:4px}
+#manualCombo .modifier-drag{padding:4px 9px;cursor:ns-resize;touch-action:none;user-select:none}
 </style>
 <div class="manual-fields">
 <label>コンボ名<input id="manualName" placeholder="コンボ名を入力"></label>
@@ -171,7 +177,7 @@
 </div>
 <div id="manualStages" style="display:flex;flex-direction:column;gap:12px"></div>
 <div class="controls"><label>追加する条件の種類<select id="manualStageType"><option value="attack">攻撃用</option><option value="support">バフ／デバフ用</option></select></label><button class="btn-ghost" id="manualAddStage">条件行を追加</button></div>
-<p class="hint">バフ／デバフの操作量は符号付きで入力できます（例：-10、+4）。空欄の項目は出力しません。</p>
+<p class="hint">バフ／デバフの操作量は直接入力・▲▼ボタン・↕の上下ドラッグで調整できます。上で増加、下で減少。空欄は出力しません（0も入力できます）。</p>
 <div class="manual-fields">
 <label>上側の装飾<input id="manualTop" value="✿･･････○･･････✿･･････○･･････✿"></label>
 <label>下側の装飾<input id="manualBottom" value="✿･･････●･･････✿･･････●･･････✿"></label>
@@ -678,6 +684,7 @@ $("input").addEventListener("keydown", e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="
 
 
 
+
 // Text import deliberately does not evaluate arbitrary JavaScript from a sheet.
 function decodeSheet(s){return s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/<br\s*\/?>/gi,'\n');}
 function normalizedName(s){return s.replace(/\([^)]*\)|（[^）]*）/g,'').replace(/^[┗└\s]+/,'').replace(/コンセントレイト/g,'C').replace(/\s/g,'');}
@@ -951,6 +958,20 @@ function generateManualCombo(data){
  return [body.join('\\n'),...(data.cost?[':侵蝕+'+data.cost]:[]),...rolls].join('\n');
 }
 // Manual editor UI
+function attachModifierControls(input,label){
+ input.type='number';input.step='1';input.inputMode='numeric';
+ const number=Number(input.value);if(input.value&&Number.isFinite(number))input.value=String(number);
+ const wrap=document.createElement('div');wrap.className='modifier-control';
+ const buttons=document.createElement('div');buttons.className='modifier-arrows';
+ const change=delta=>{input.value=String((Number(input.value)||0)+delta);input.dispatchEvent(new Event('input',{bubbles:true}));};
+ for(const [text,delta] of [['▲',1],['▼',-1]]){const button=document.createElement('button');button.type='button';button.className='btn-ghost';button.textContent=text;button.setAttribute('aria-label',label+(delta>0?'を1増やす':'を1減らす'));button.addEventListener('click',event=>{event.preventDefault();change(delta);});buttons.appendChild(button);}
+ const drag=document.createElement('button');drag.type='button';drag.className='btn-ghost modifier-drag';drag.textContent='↕';drag.title='上下にドラッグして増減（上で増加・下で減少）';drag.setAttribute('aria-label',label+'をドラッグで調整');
+ let active=null;
+ drag.addEventListener('pointerdown',event=>{if(event.button!==0)return;event.preventDefault();active={id:event.pointerId,y:event.clientY,value:Number(input.value)||0};drag.setPointerCapture(event.pointerId);});
+ drag.addEventListener('pointermove',event=>{if(!active||active.id!==event.pointerId)return;const delta=Math.trunc((active.y-event.clientY)/8);if(delta===0&&input.value==='')return;input.value=String(active.value+delta);input.dispatchEvent(new Event('input',{bubbles:true}));});
+ const stop=()=>{active=null;};drag.addEventListener('pointerup',stop);drag.addEventListener('pointercancel',stop);drag.addEventListener('lostpointercapture',stop);
+ wrap.append(input,buttons,drag);return wrap;
+}
 function readManualStage(row){return {type:row.dataset.type,...Object.fromEntries(Array.from(row.querySelectorAll('input')).map(input=>[input.dataset.field,input.value.trim()]))};}
 function addManualStage(values={},afterRow=null){
  const row=document.createElement('div');row.dataset.type=values.type||'attack';row.style.cssText='border:1px solid var(--line);border-radius:8px;padding:12px';
@@ -958,7 +979,7 @@ function addManualStage(values={},afterRow=null){
  const fields=document.createElement('div');fields.className='manual-fields';
  const columns=row.dataset.type==='support'?[['condition','条件'],['scope','効果期間・対象（例：ラウンド中、対象の）'],['diceMod','操作ダイス ±'],['achievementMod','操作達成値 ±'],['criticalMod','操作クリティカル値 ±'],['attackMod','操作攻撃力 ±'],['damageMod','操作ダメージD ±'],['initiativeMod','操作行動値 ±（任意）']]:[['condition','条件'],['dice','ダイス'],['crit','C値'],['achievement','達成値'],['attack','攻撃力']];
  for(const [key,label] of columns){
-  const cell=document.createElement('label'),input=document.createElement('input');cell.appendChild(document.createTextNode(label));input.dataset.field=key;input.setAttribute('aria-label',label);input.value=values[key]||'';cell.appendChild(input);fields.appendChild(cell);
+  const cell=document.createElement('label'),input=document.createElement('input');cell.appendChild(document.createTextNode(label));input.dataset.field=key;input.setAttribute('aria-label',label);input.value=values[key]||'';cell.appendChild(row.dataset.type==='support'&&key.endsWith('Mod')?attachModifierControls(input,label):input);fields.appendChild(cell);
  }
  const extraLabel=document.createElement('label'),extra=document.createElement('input');extraLabel.textContent='自由入力（特殊効果など）';extra.dataset.field='extra';extra.setAttribute('aria-label','自由入力（特殊効果など）');extra.placeholder='装甲無視、ガード不可／対象は次の判定に適用';extra.value=values.extra||'';extraLabel.appendChild(extra);fields.appendChild(extraLabel);
  row.appendChild(fields);
