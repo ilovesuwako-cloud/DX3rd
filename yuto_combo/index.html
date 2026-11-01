@@ -139,9 +139,9 @@
 <label class="opt">装飾テンプレート<select id="textDecorationPreset" aria-label="装飾テンプレート"></select></label>
 <p class="hint">テンプレートを選ぶと上下の装飾を変更します。選択後も下の欄で自由に編集できます。</p>
 <label for="comboStartDecoration" style="font-size:12.5px;color:var(--text-dim)">コンボ上側の装飾（空欄で省略）</label>
-<input type="text" id="comboStartDecoration" value="✿･･････○･･････✿･･････○･･････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
+<input type="text" id="comboStartDecoration" value="✿････････○････････✿････････○････････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
 <label for="comboEndDecoration" style="font-size:12.5px;color:var(--text-dim)">コンボ下側の装飾（空欄で省略）</label>
-<input type="text" id="comboEndDecoration" value="✿･･････●･･････✿･･････●･･････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
+<input type="text" id="comboEndDecoration" value="✿････････●････････✿････････●････････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
 <p class="hint">試作の段階：通常は100%未満／100%以上、起源種は80%未満／80%以上／100%以上。より高い段階は未対応です。武器未指定時は攻撃力の入力箇所を式に残します。</p>
 <button class="btn-go" id="convertText">テキストからコンボを生成</button>
 <label class="opt">条件の出力 <select id="textConditionMode"><option value="combined">条件をまとめる</option><option value="separate">条件別に分ける</option></select></label>
@@ -187,8 +187,8 @@
 <label>装飾テンプレート<select id="manualDecorationPreset"></select></label>
 <p class="hint">テンプレートを選ぶと上下の装飾を変更します。選択後も各欄で自由に編集できます。</p>
 <div class="manual-fields">
-<label>上側の装飾<input id="manualTop" value="✿･･････○･･････✿･･････○･･････✿"></label>
-<label>下側の装飾<input id="manualBottom" value="✿･･････●･･････✿･･････●･･････✿"></label>
+<label>上側の装飾<input id="manualTop" value="✿････････○････････✿････････○････････✿"></label>
+<label>下側の装飾<input id="manualBottom" value="✿････････●････････✿････････●････････✿"></label>
 <label>コンボ名の左装飾<input id="manualTitleLeft" value="◤"></label>
 <label>コンボ名の右装飾<input id="manualTitleRight" value="◢"></label>
 </div>
@@ -213,16 +213,16 @@ const STAT_SKILLS = {肉体:["白兵","回避","運転"],感覚:["射撃","知�
 
 // Text import deliberately does not evaluate arbitrary JavaScript from a sheet.
 const DECORATION_PRESETS=[
- {name:'花と円（デフォルト）',top:'✿･･････○･･････✿･･････○･･････✿',bottom:'✿･･････●･･････✿･･････●･･････✿'},
- {name:'星の軌跡',top:'✦─────◇─────✧─────◇─────✦',bottom:'✦─────◆─────✧─────◆─────✦'},
- {name:'月夜',top:'☾ ──── · ✧ · ──── · ✧ · ──── ☽',bottom:'☽ ──── · ✦ · ──── · ✦ · ──── ☾'},
- {name:'雷光',top:'⚡━━━━┄◇┄━━━━◇━━━━┄◇┄━━━━⚡',bottom:'⚡━━━━┄◆┄━━━━◆━━━━┄◆┄━━━━⚡'},
- {name:'ダイヤ',top:'◇───◇───◇───◇───◇───◇',bottom:'◆───◆───◆───◆───◆───◆'},
- {name:'電脳フレーム',top:'┌─[ ◇ ]──────[ SYSTEM ]──────[ ◇ ]─┐',bottom:'└─[ ◆ ]──────[  END   ]──────[ ◆ ]─┘'},
+ {name:'花と円（デフォルト）',top:'✿････････○････････✿････････○････････✿',bottom:'✿････････●････････✿････････●････････✿'},
+ {name:'星の軌跡',top:'✦────◇────✧────◇────✦',bottom:'✦────◆────✧────◆────✦'},
+ {name:'月夜',top:'☾ ─── · ✧ · ─ ◇ ─ · ✧ · ─ ☽',bottom:'☽ ─── · ✦ · ─ ◆ ─ · ✦ · ─ ☾'},
+ {name:'雷光',top:'⚡━━━┄◇┄━━━◇━━━┄◇┄━━━⚡',bottom:'⚡━━━┄◆┄━━━◆━━━┄◆┄━━━⚡'},
+ {name:'ダイヤ',top:'◇────◇────◇────◇────◇',bottom:'◆────◆────◆────◆────◆'},
+ {name:'電脳フレーム',top:'┌─◇─────[ SYSTEM ]─────◇─┐',bottom:'└─◆─────[  END   ]─────◆─┘'},
  {name:'和風・結び',top:'❖ ━━━ ∞ ━━━ ◇ ━━━ ∞ ━━━ ❖',bottom:'❖ ━━━ ∞ ━━━ ◆ ━━━ ∞ ━━━ ❖'},
  {name:'ハートリボン',top:'♡ ─── ⋈ ─── ♡ ─── ⋈ ─── ♡',bottom:'♥ ─── ⋈ ─── ♥ ─── ⋈ ─── ♥'},
- {name:'照準',top:'＋───┬───〈 ◇ 〉───┬───＋',bottom:'＋───┴───〈 ◆ 〉───┴───＋'},
- {name:'シンプル二重線',top:'╔══════════ ◇ ══════════╗',bottom:'╚══════════ ◆ ══════════╝'}
+ {name:'照準',top:'＋────┬──〈  ◇  〉──┬────＋',bottom:'＋────┴──〈  ◆  〉──┴────＋'},
+ {name:'シンプル二重線',top:'╔═════════◇═════════╗',bottom:'╚═════════◆═════════╝'}
 ];
 function textDisplayWidth(text){return Array.from(text).reduce((n,c)=>n+(/[\u0020-\u007e\uff61-\uff9f]/.test(c)?1:2),0);}
 function conditionEffectLines(primary,damage,extras=[]){
@@ -378,7 +378,7 @@ function variableCost(effects,fallback){
  for(const e of effects){const cost=arithmetic(e.cost);if(cost===null)return fallback;if(/重ねて使用可能/.test(e.effect))variables.push(`(${displayEffectName(e.name)}×${cost})`);else fixed+=cost;}
  return [String(fixed),...variables].join('+');
 }
-function createTextPalette(sheet,rule,weapon,endDecoration='✿･･････●･･････✿･･････●･･････✿',startDecoration='✿･･････○･･････✿･･････○･･････✿',conditionMode='combined'){
+function createTextPalette(sheet,rule,weapon,endDecoration='✿････････●････････✿････････●････････✿',startDecoration='✿････････○････････✿････････○････････✿',conditionMode='combined'){
  const origin=rule==='origin'||(rule==='auto'&&sheet.origin);const stages=origin?[{label:'80%未満',at:0,b:0},{label:'80%以上',at:80,b:1},{label:'100%以上',at:100,b:2}]:[{label:'100%未満',at:0,b:0},{label:'100%以上',at:100,b:1}];
  if(!origin&&sheet.combos.some(c=>/80[%％]以上/.test(c.condition))){stages[0].label='80%未満';stages.splice(1,0,{label:'80%以上',at:80,b:0});}
  const warnings=new Set(['試作：自然文の効果を完全には解釈できません。生成式と原文を照合し、未反映の補正は手入力してください。']),lines=[],seen=new Set(),groups=new Map();
@@ -396,7 +396,7 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
   const timings=comboTiming(effects);
   const difficulties=[...new Set(effects.map(e=>e.difficulty).filter(x=>x&&x!=='―'))].join('／');
   const limits=[...new Set(effects.map(e=>e.limit).filter(x=>x&&x!=='―'))].join('／');
-  const body=['✿･･････○･･････✿･･････○･･････✿',`《${combo.name}》`, '',combo.refs.map(r=>`《${displayEffectName(r)}》`).join('＋'),[timings,combo.skill&&combo.skill!=='―'?`〈${combo.skill}〉`:'',difficulties].filter(Boolean).join('｜'),`${combo.target}｜${combo.range}｜侵蝕値：${cost}${limits?'｜制限：'+limits:''}`,''];
+  const body=['✿････････○････････✿････････○････････✿',`《${combo.name}》`, '',combo.refs.map(r=>`《${displayEffectName(r)}》`).join('＋'),[timings,combo.skill&&combo.skill!=='―'?`〈${combo.skill}〉`:'',difficulties].filter(Boolean).join('｜'),`${combo.target}｜${combo.range}｜侵蝕値：${cost}${limits?'｜制限：'+limits:''}`,''];
   for(const p of parts)body.push(`《${displayEffectName(p.e.name)}》 Lv${p.lv}`,p.text);
   // Cross-effect adjustments are explicit notes, not silently applied twice.
   
