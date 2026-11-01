@@ -486,7 +486,7 @@ function setupDecorationPresets(selectId,topId,bottomId){
 }
 function setupTitlePresets(selectId,leftId,rightId){
  const select=$(selectId),left=$(leftId),right=$(rightId);
- select.replaceChildren(...TITLE_PRESETS.map(([number,l,r])=>new Option(`${number}：${l}コンボ名${r}`,String(number))),new Option('自由編集','custom'));
+ select.replaceChildren(...TITLE_PRESETS.map(([number,l,r],index)=>new Option(`${index+1}：${l}コンボ名${r}`,String(number))),new Option('自由編集','custom'));
  const sync=()=>{const match=TITLE_PRESETS.find(([,l,r])=>l===left.value&&r===right.value);select.value=match?String(match[0]):'custom';};
  select.addEventListener('change',()=>{const match=TITLE_PRESETS.find(([number])=>String(number)===select.value);if(match){left.value=match[1];right.value=match[2];}});
  left.addEventListener('input',sync);right.addEventListener('input',sync);sync();
