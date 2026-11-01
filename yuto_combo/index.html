@@ -203,6 +203,39 @@ const $ = id => document.getElementById(id);
 const STAT_SKILLS = {肉体:["白兵","回避","運転"],感覚:["射撃","知覚","芸術"],精神:["RC","意志","知識"],社会:["交渉","調達","情報"]};
 
 // Text import deliberately does not evaluate arbitrary JavaScript from a sheet.
+function textDisplayWidth(text){return Array.from(text).reduce((n,c)=>n+(/[\u0020-\u007e\uff61-\uff9f]/.test(c)?1:2),0);}
+function conditionEffectLines(primary,damage,extras=[]){
+ const lines=[];
+ for(const values of [primary,damage]){const filled=values.filter(Boolean);if(filled.length)lines.push('|'+filled.join('|')+'|');}
+ for(const extra of extras)for(const item of String(extra||'').split(/\\n|\r?\n|[、／/]/)){if(item.trim())lines.push('|'+item.trim()+'|');}
+ return lines;
+}
+function automaticConditionLines(summary){
+ const primary=[],damage=[],extras=[];
+ for(const item of summary.split('／')){
+  if(/^(?:ダイス|C値|C[-－−]|達成値)/.test(item))primary.push(item.replace(/^C([-－−])/, 'C値$1'));
+  else if(/^(?:攻撃力|ダメージ)/.test(item))damage.push(item);
+  else extras.push(item);
+ }
+ return conditionEffectLines(primary,damage,extras);
+}
+function wrapComboEffects(text,top,bottom){
+ const widths=[top,bottom].filter(s=>s&&s.trim()).map(textDisplayWidth);
+ const limit=widths.length?Math.min(...widths):60;
+ const output=[];
+ for(const source of text.replace(/\\n/g,'\n').split(/\r?\n/)){
+  const terms=[];let depth=0,start=0;
+  for(let i=0;i<source.length;i++){
+   if(source[i]==='《')depth++;
+   if(source[i]==='》')depth=Math.max(0,depth-1);
+   if(depth===0&&/[+＋]/.test(source[i])){terms.push(source.slice(start,i).trim());start=i;}
+  }
+  terms.push(source.slice(start).trim());
+  let line='';for(const term of terms){if(line&&textDisplayWidth(line+term)>limit){output.push(line);line=term;}else line+=term;}
+  output.push(line);
+ }
+ return output;
+}
 function decodeSheet(s){return s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/<br\s*\/?>/gi,'\n');}
 function normalizedName(s){return s.replace(/\([^)]*\)|（[^）]*）/g,'').replace(/^[┗└\s]+/,'').replace(/コンセントレイト/g,'C').replace(/\s/g,'');}
 function sectionOf(text,name){const m=text.match(new RegExp('■'+name+'■([\\s\\S]*?)(?=\\n■|$)'));return m?m[1]:'';}
@@ -372,11 +405,11 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
   }
   const groupKey=JSON.stringify([combo.name,combo.refs,combo.skill,combo.target,combo.range,combo.cost]);
   if(!groups.has(groupKey)){
-   const header=[...(startDecoration?[startDecoration]:[]),...decoratedComboTitle(combo.name),'',...body.slice(3,6)];
+   const header=[...(startDecoration?[startDecoration]:[]),...decoratedComboTitle(combo.name),'',...wrapComboEffects(body[3],startDecoration,endDecoration),...body.slice(4,6)];
    groups.set(groupKey,{header,summaries:[],external:[],rolls:[],cost});
   }
   const group=groups.get(groupKey);
-  group.summaries.push(`${stage.label}：${stageEffectSummary(parts)}`);
+  group.summaries.push(`▼${stage.label}`,...automaticConditionLines(stageEffectSummary(parts)));
   const externalIndex=body.indexOf('【コンボ外効果】');
   if(externalIndex>=0)group.external.push(`${stage.label}：`,...body.slice(externalIndex+1));
   group.rolls.push(...rolls);
@@ -443,7 +476,7 @@ function generateManualCombo(data){
  if(!data.name.trim())throw new Error('コンボ名を入力してください。');
  const title=data.titleLeft+data.name.trim()+data.titleRight;
  const body=[...(data.top?[data.top]:[]),title,...(data.reading?[data.reading]:[]),''];
- if(data.effects)body.push(data.effects);
+ if(data.effects)body.push(...wrapComboEffects(data.effects,data.top,data.bottom));
  const meta=[data.timing,data.skill?`〈${data.skill.replace(/[〈〉]/g,'')}〉`:'',data.difficulty].filter(Boolean).join('｜');
  if(meta)body.push(meta);
  const target=[data.target,data.range,data.cost?'侵蝕値：'+data.cost:'',data.limit?'制限：'+data.limit:''].filter(Boolean).join('｜');
@@ -453,19 +486,21 @@ function generateManualCombo(data){
  for(const stage of data.stages){
   if(!stage.condition.trim())throw new Error('各行の条件を入力してください。');
   if(stage.type==='support'){
-   const modifiers=[['diceMod','ダイス','個'],['achievementMod','達成値',''],['criticalMod','C値',''],['attackMod','攻撃力',''],['damageMod','ダメージ','D'],['initiativeMod','行動値','']].filter(([key])=>String(stage[key]||'').trim()).map(([key,label,unit])=>label+manualSigned(stage[key])+unit);
-   const extra=String(stage.extra||'').trim().replace(/\r\n?|\n/g,'\\n');
-   body.push(stage.condition+'：'+(stage.scope||'')+[...modifiers,...(extra?[extra]:[])].join('／'));
+   const mod=(key,label,unit='')=>String(stage[key]||'').trim()?label+manualSigned(stage[key])+unit:'';
+   body.push('▼'+stage.condition,...(stage.scope?[stage.scope]:[]),...conditionEffectLines(
+    [mod('diceMod','ダイス'),mod('criticalMod','C値'),mod('achievementMod','達成値')],
+    [mod('attackMod','攻撃力'),mod('damageMod','ダメージ','D10')],
+    [mod('initiativeMod','行動値'),stage.extra]));
    continue;
   }
-  const summary=[stage.dice?'ダイス：'+stage.dice:'',stage.crit?'C値：'+stage.crit:'',stage.achievement?'達成値'+manualSigned(stage.achievement):'',stage.attack?'攻撃力'+manualSigned(stage.attack):''].filter(Boolean);
-  if(String(stage.extra||'').trim())summary.push(stage.extra.trim().replace(/\r\n?|\n/g,'\\n'));
-  body.push(stage.condition+'：'+summary.join('／'));
+  body.push('▼'+stage.condition,...conditionEffectLines(
+   [stage.dice?'ダイス'+manualSigned(stage.dice):'',stage.crit?'C値'+stage.crit:'',stage.achievement?'達成値'+manualSigned(stage.achievement):''],
+   [stage.attack?'攻撃力'+manualSigned(stage.attack):'',stage.damageDice?'ダメージ'+manualSigned(stage.damageDice)+'D10':''],[stage.extra]));
   if(stage.dice){if(!stage.crit)throw new Error('ダイスを入力した行にはC値も入力してください。');
    const dice=stage.dice.replace(/(?<!\{)侵蝕B(?!\})/g,'{侵蝕B}');
    rolls.push(`(${dice})DX${stage.crit}${manualSigned(stage.achievement)} 【${data.name}／${stage.condition}／命中判定】`);
   }
-  if(stage.attack)rolls.push(`(命中判定の十の位+1)D10${manualSigned(stage.attack)} 【${data.name}／${stage.condition}／ダメージ判定】`);
+  if(stage.attack||stage.damageDice)rolls.push(`(命中判定の十の位+1)D10${manualSigned(stage.damageDice?stage.damageDice+'D10':'')}${manualSigned(stage.attack)} 【${data.name}／${stage.condition}／ダメージ判定】`);
  }
  if(data.notes)body.push('',...data.notes.replace(/\r\n?/g,'\n').split('\n'));
  if(data.bottom)body.push(data.bottom);
@@ -486,16 +521,16 @@ function attachModifierControls(input,label){
  const stop=()=>{active=null;};drag.addEventListener('pointerup',stop);drag.addEventListener('pointercancel',stop);drag.addEventListener('lostpointercapture',stop);
  wrap.append(input,buttons,drag);return wrap;
 }
-function readManualStage(row){return {type:row.dataset.type,...Object.fromEntries(Array.from(row.querySelectorAll('input')).map(input=>[input.dataset.field,input.value.trim()]))};}
+function readManualStage(row){return {type:row.dataset.type,...Object.fromEntries(Array.from(row.querySelectorAll('input, textarea')).map(input=>[input.dataset.field,input.value.trim()]))};}
 function addManualStage(values={},afterRow=null){
  const row=document.createElement('div');row.dataset.type=values.type||'attack';row.style.cssText='border:1px solid var(--line);border-radius:8px;padding:12px';
  const heading=document.createElement('div');heading.textContent=row.dataset.type==='support'?'バフ／デバフ用条件':'攻撃用条件';row.appendChild(heading);
  const fields=document.createElement('div');fields.className='manual-fields';
- const columns=row.dataset.type==='support'?[['condition','条件'],['scope','効果期間・対象（例：ラウンド中、対象の）'],['diceMod','操作ダイス ±'],['achievementMod','操作達成値 ±'],['criticalMod','操作クリティカル値 ±'],['attackMod','操作攻撃力 ±'],['damageMod','操作ダメージD ±'],['initiativeMod','操作行動値 ±（任意）']]:[['condition','条件'],['dice','ダイス'],['crit','C値'],['achievement','達成値'],['attack','攻撃力']];
+ const columns=row.dataset.type==='support'?[['condition','条件'],['scope','効果期間・対象（例：ラウンド中、対象の）'],['diceMod','操作ダイス ±'],['achievementMod','操作達成値 ±'],['criticalMod','操作クリティカル値 ±'],['attackMod','操作攻撃力 ±'],['damageMod','操作ダメージD ±'],['initiativeMod','操作行動値 ±（任意）']]:[['condition','条件'],['dice','ダイス'],['crit','C値'],['achievement','達成値'],['attack','攻撃力'],['damageDice','追加ダメージD（個数・±）']];
  for(const [key,label] of columns){
   const cell=document.createElement('label'),input=document.createElement('input');cell.appendChild(document.createTextNode(label));input.dataset.field=key;input.setAttribute('aria-label',label);input.value=values[key]||'';cell.appendChild(row.dataset.type==='support'&&key.endsWith('Mod')?attachModifierControls(input,label):input);fields.appendChild(cell);
  }
- const extraLabel=document.createElement('label'),extra=document.createElement('input');extraLabel.textContent='自由入力（特殊効果など）';extra.dataset.field='extra';extra.setAttribute('aria-label','自由入力（特殊効果など）');extra.placeholder='装甲無視、ガード不可／対象は次の判定に適用';extra.value=values.extra||'';extraLabel.appendChild(extra);fields.appendChild(extraLabel);
+ const extraLabel=document.createElement('label'),extra=document.createElement('textarea');extraLabel.textContent='自由入力（「、」「/」「／」または改行で1効果ずつ分割）';extra.dataset.field='extra';extra.style.minHeight='80px';extra.setAttribute('aria-label','自由入力（特殊効果など）');extra.placeholder='戦闘移動、装甲無視、ガード不可';extra.value=values.extra||'';extraLabel.appendChild(extra);fields.appendChild(extraLabel);
  row.appendChild(fields);
  const actions=document.createElement('div');actions.className='controls';actions.style.marginTop='10px';
  const duplicate=document.createElement('button');duplicate.className='btn-ghost';duplicate.textContent='この条件を複製';duplicate.addEventListener('click',()=>{const copy=addManualStage(readManualStage(row),row);const condition=copy.querySelector('[data-field="condition"]');condition.focus();condition.select();$('manualStatus').textContent='条件を直下に複製しました。条件名と変わる項目を編集してください。';});actions.appendChild(duplicate);
