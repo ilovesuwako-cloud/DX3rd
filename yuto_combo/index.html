@@ -127,18 +127,24 @@
   <section class="card" style="margin-top:22px">
 <h2>テキスト出力 → 装飾付きコンボ（試作）</h2>
 <div class="body">
+<label for="sheetUrl">ゆとシートURLから読み込む</label>
+<div class="controls"><input id="sheetUrl" type="url" placeholder="https://yutorize.work/ytsheet/dx3rd/?id=…" style="flex:1;min-width:220px;padding:12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px"><button class="btn-ghost" id="loadSheetUrl">URLを読み込む</button></div>
+<p class="hint" id="sheetUrlStatus" role="status">公開シートに対応。読み込んだ本文を確認してから「テキストからコンボを生成」を押してください。</p>
 <p class="hint">ゆとシートの「テキスト出力」を貼り付けます。コンボ欄の命中式から基礎ダイスを取得し、エフェクト情報から補正を計算します。生成したチャパレをコピーして使用できます。</p>
 <textarea id="sheetText" aria-label="ゆとシートのテキスト本文。txtファイルのドロップにも対応" placeholder="テキストを貼り付けるか、.txtファイルをここにドロップ&#10;&#10;キャラクター名：…&#10;■エフェクト■&#10;…&#10;■コンボ■"></textarea>
 <p class="hint" id="sheetFileStatus" role="status">.txtファイルを入力欄にドロップして読み込むこともできます。</p>
 <div class="controls"><label class="opt">使用武器 <select id="weaponChoice"><option value="">未指定</option></select></label>
 <button class="btn-ghost" id="scanWeapons">武器候補を読み込む</button>
 <label class="opt">Lv補正 <select id="levelRule"><option value="auto">自動（ロイス欄の起源種を判別）</option><option value="normal">通常</option><option value="origin">起源種</option></select></label></div>
+<label class="opt">装飾テンプレート<select id="textDecorationPreset" aria-label="装飾テンプレート"></select></label>
+<p class="hint">テンプレートを選ぶと上下の装飾を変更します。選択後も下の欄で自由に編集できます。</p>
 <label for="comboStartDecoration" style="font-size:12.5px;color:var(--text-dim)">コンボ上側の装飾（空欄で省略）</label>
 <input type="text" id="comboStartDecoration" value="✿･･････○･･････✿･･････○･･････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
 <label for="comboEndDecoration" style="font-size:12.5px;color:var(--text-dim)">コンボ下側の装飾（空欄で省略）</label>
 <input type="text" id="comboEndDecoration" value="✿･･････●･･････✿･･････●･･････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
 <p class="hint">試作の段階：通常は100%未満／100%以上、起源種は80%未満／80%以上／100%以上。より高い段階は未対応です。武器未指定時は攻撃力の入力箇所を式に残します。</p>
 <button class="btn-go" id="convertText">テキストからコンボを生成</button>
+<label class="opt">条件の出力 <select id="textConditionMode"><option value="combined">条件をまとめる</option><option value="separate">条件別に分ける</option></select></label>
 <textarea id="decorated" readonly placeholder="装飾チャパレ（1コンボ1行。文字の \n は送信時の改行）"></textarea>
 <button class="btn-ghost" id="copyDecorated">装飾チャパレをコピー</button>
 <pre id="textWarnings" style="white-space:pre-wrap;color:var(--warn);font-size:12px"></pre>
@@ -178,6 +184,8 @@
 <div id="manualStages" style="display:flex;flex-direction:column;gap:12px"></div>
 <div class="controls"><label>追加する条件の種類<select id="manualStageType"><option value="attack">攻撃用</option><option value="support">バフ／デバフ用</option></select></label><button class="btn-ghost" id="manualAddStage">条件行を追加</button></div>
 <p class="hint">バフ／デバフの操作量は直接入力・▲▼ボタン・↕の上下ドラッグで調整できます。上で増加、下で減少。空欄は出力しません（0も入力できます）。</p>
+<label>装飾テンプレート<select id="manualDecorationPreset"></select></label>
+<p class="hint">テンプレートを選ぶと上下の装飾を変更します。選択後も各欄で自由に編集できます。</p>
 <div class="manual-fields">
 <label>上側の装飾<input id="manualTop" value="✿･･････○･･････✿･･････○･･････✿"></label>
 <label>下側の装飾<input id="manualBottom" value="✿･･････●･･････✿･･････●･･････✿"></label>
@@ -185,6 +193,7 @@
 <label>コンボ名の右装飾<input id="manualTitleRight" value="◢"></label>
 </div>
 <label>補足（任意・改行可）<textarea id="manualNotes" style="min-height:85px" placeholder="コンボ外効果や使用条件など"></textarea></label>
+<label>条件の出力<select id="manualConditionMode"><option value="combined">条件をまとめる</option><option value="separate">条件別に分ける</option></select></label>
 <div class="actions"><button class="btn-go" id="manualGenerate">チャパレを生成</button><button class="btn-ghost" id="manualAppend">生成して出力末尾に追加</button></div>
 <label>チャパレ出力（編集可）<textarea id="manualOutput" spellcheck="false" style="min-height:200px"></textarea></label>
 <button class="btn-copy" id="manualCopy">手入力チャパレをコピー</button>
@@ -203,6 +212,18 @@ const $ = id => document.getElementById(id);
 const STAT_SKILLS = {肉体:["白兵","回避","運転"],感覚:["射撃","知覚","芸術"],精神:["RC","意志","知識"],社会:["交渉","調達","情報"]};
 
 // Text import deliberately does not evaluate arbitrary JavaScript from a sheet.
+const DECORATION_PRESETS=[
+ {name:'花と円（デフォルト）',top:'✿･･････○･･････✿･･････○･･････✿',bottom:'✿･･････●･･････✿･･････●･･････✿'},
+ {name:'星の軌跡',top:'✦─────◇─────✧─────◇─────✦',bottom:'✦─────◆─────✧─────◆─────✦'},
+ {name:'月夜',top:'☾ ──── · ✧ · ──── · ✧ · ──── ☽',bottom:'☽ ──── · ✦ · ──── · ✦ · ──── ☾'},
+ {name:'雷光',top:'⚡━━━━┄◇┄━━━━◇━━━━┄◇┄━━━━⚡',bottom:'⚡━━━━┄◆┄━━━━◆━━━━┄◆┄━━━━⚡'},
+ {name:'ダイヤ',top:'◇───◇───◇───◇───◇───◇',bottom:'◆───◆───◆───◆───◆───◆'},
+ {name:'電脳フレーム',top:'┌─[ ◇ ]──────[ SYSTEM ]──────[ ◇ ]─┐',bottom:'└─[ ◆ ]──────[  END   ]──────[ ◆ ]─┘'},
+ {name:'和風・結び',top:'❖ ━━━ ∞ ━━━ ◇ ━━━ ∞ ━━━ ❖',bottom:'❖ ━━━ ∞ ━━━ ◆ ━━━ ∞ ━━━ ❖'},
+ {name:'ハートリボン',top:'♡ ─── ⋈ ─── ♡ ─── ⋈ ─── ♡',bottom:'♥ ─── ⋈ ─── ♥ ─── ⋈ ─── ♥'},
+ {name:'照準',top:'＋───┬───〈 ◇ 〉───┬───＋',bottom:'＋───┴───〈 ◆ 〉───┴───＋'},
+ {name:'シンプル二重線',top:'╔══════════ ◇ ══════════╗',bottom:'╚══════════ ◆ ══════════╝'}
+];
 function textDisplayWidth(text){return Array.from(text).reduce((n,c)=>n+(/[\u0020-\u007e\uff61-\uff9f]/.test(c)?1:2),0);}
 function conditionEffectLines(primary,damage,extras=[]){
  const lines=[];
@@ -237,11 +258,11 @@ function wrapComboEffects(text,top,bottom){
  return output;
 }
 function decodeSheet(s){return s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/<br\s*\/?>/gi,'\n');}
-function normalizedName(s){return s.replace(/\([^)]*\)|（[^）]*）/g,'').replace(/^[┗└\s]+/,'').replace(/コンセントレイト/g,'C').replace(/\s/g,'');}
+function normalizedName(s){return s.normalize('NFKC').replace(/\([^)]*\)/g,'').replace(/^[┗└\s]+/,'').replace(/\s/g,'').replace(/^(?:コンセントレイト|コンセ|C)(?=[:：]|$)/i,'C').replace(/：/g,':');}
 function sectionOf(text,name){const m=text.match(new RegExp('■'+name+'■([\\s\\S]*?)(?=\\n■|$)'));return m?m[1]:'';}
 // Column boundaries have surrounding padding; slashes inside prose remain intact.
 function sheetRows(text,name){return sectionOf(text,name).split(/\r?\n/).filter(l=>l.includes(' / ')).map(l=>l.trim().split(/\s+\/(?=\s)/).map(x=>x.trim()));}
-function effectRefs(s){const refs=[];let depth=0,start=0;for(let i=0;i<s.length;i++){if(s[i]==='《'){if(depth===0)start=i+1;depth++;}else if(s[i]==='》'){depth--;if(depth===0)refs.push(s.slice(start,i));}}return refs;}
+function effectRefs(s){const refs=[];let depth=0,start=0;for(let i=0;i<s.length;i++){if(s[i]==='《'){if(depth===0)start=i+1;depth++;}else if(s[i]==='》'){depth--;if(depth===0)refs.push(s.slice(start,i));}}return refs.length?refs:s.split(/[+＋]/).map(x=>x.trim()).filter(Boolean);}
 function readSheet(text){
  const effects=sheetRows(text,'エフェクト').filter(r=>r[0]!=='《エフェクト名》').map(r=>({name:r[0].replace(/^《|》$/g,''),lv:Number(r[1]),timing:r[2],difficulty:r[3],target:r[4],range:r[5],cost:r[6],limit:r[7],effect:decodeSheet(r.slice(8).join(' / '))}));
  const combos=sheetRows(text,'コンボ').filter(r=>r[0]!=='コンボ名').map(r=>({name:r[0],refs:effectRefs(r[1]),skill:r[2],hit:r[3],target:r[5],range:r[6],cost:r[7],condition:r[8]}));
@@ -257,9 +278,13 @@ function arithmetic(s){
 }
 function calculatedEffect(e,bonus){
  const lv=e.lv+(/常時/.test(e.timing)?0:bonus);
- let text=e.effect.replace(/\bLv\b/gi,String(lv));
+ let text=e.effect.normalize('NFKC').replace(/\s+/g,' ')
+  .replace(/クリティカル値を?|C値を/g,'C')
+  .replace(/ダイスを\s*/g,'ダイス').replace(/下限値/g,'下限')
+  .replace(/(攻撃力|ガード値)\s*:\s*/g,'$1')
+  .replace(/\bLv\b/gi,String(lv));
  text=text.replace(/[\[［]([\d\s+*×÷/－−-]+)[\]］]/g,(all,expr)=>{const n=arithmetic(expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/[－−]/g,'-'));return n===null?all:String(n);});
- text=text.replace(/((?:攻撃力|ガード値)(?:\s*[:：])?)(\d+(?:[+\-]\d+)+)/g,(all,label,expr)=>{const n=arithmetic(expr);return n===null?all:label+n;});
+ text=text.replace(/((?:攻撃力|ガード値)(?:\s*[:：])?)([+\-]?\d+(?:[+\-]\d+)+)/g,(all,label,expr)=>{const n=arithmetic(expr);return n===null?all:label+(expr.startsWith('+')&&n>=0?'+':'')+n;});
  return {e,lv,text};
 }
 function conditionAllowed(c,stage){const m=c.match(/(\d+)[%％](以上|未満)/);return !m||(m[2]==='以上'?stage>=Number(m[1]):stage<Number(m[1]));}
@@ -319,6 +344,7 @@ function stageEffectSummary(parts){
  let weaponAttack=false;
  for(const p of parts){
   if(/戦闘移動/.test(p.text)&&!combatMove){results.push('戦闘移動');combatMove=true;}
+  if(/全力移動/.test(p.text))results.push('全力移動');
   const data=p.text.match(/(?:ドッジ|行動|装甲)[:：][-+]?\d+|攻撃力\d+|ガード値\d+/g);
   if(data)results.push(...data.map(s=>s.replace('ガード値','ガード')));
   const genericAttack=p.text.match(/攻撃[+＋](\d+)/);
@@ -343,7 +369,7 @@ function stageEffectSummary(parts){
  for(const p of parts){const m=p.text.match(/攻撃力[:：]?\s*[+＋]\s*\[([^\]]*選択した武器の数[^\]]*)\]/);if(m)results.push(`攻撃力+(${m[1]})`);}
  const limits=results.filter(s=>/^(?:シナリオ|シーン)\d+回$/.test(s));
  const ordered=combatMove?results.filter(s=>!/^(?:シナリオ|シーン)\d+回$/.test(s)).concat(limits):results;
- return ordered.length?ordered.join('／'):parts.map(p=>`《${displayEffectName(p.e.name)}》Lv${p.lv}`).join('／');
+ return ordered.join('／');
 }
 function variableCost(effects,fallback){
  if(!effects.some(e=>/重ねて使用可能/.test(e.effect)))return fallback;
@@ -351,7 +377,7 @@ function variableCost(effects,fallback){
  for(const e of effects){const cost=arithmetic(e.cost);if(cost===null)return fallback;if(/重ねて使用可能/.test(e.effect))variables.push(`(${displayEffectName(e.name)}×${cost})`);else fixed+=cost;}
  return [String(fixed),...variables].join('+');
 }
-function createTextPalette(sheet,rule,weapon,endDecoration='✿･･････●･･････✿･･････●･･････✿',startDecoration='✿･･････○･･････✿･･････○･･････✿'){
+function createTextPalette(sheet,rule,weapon,endDecoration='✿･･････●･･････✿･･････●･･････✿',startDecoration='✿･･････○･･････✿･･････○･･････✿',conditionMode='combined'){
  const origin=rule==='origin'||(rule==='auto'&&sheet.origin);const stages=origin?[{label:'80%未満',at:0,b:0},{label:'80%以上',at:80,b:1},{label:'100%以上',at:100,b:2}]:[{label:'100%未満',at:0,b:0},{label:'100%以上',at:100,b:1}];
  if(!origin&&sheet.combos.some(c=>/80[%％]以上/.test(c.condition))){stages[0].label='80%未満';stages.splice(1,0,{label:'80%以上',at:80,b:0});}
  const warnings=new Set(['試作：自然文の効果を完全には解釈できません。生成式と原文を照合し、未反映の補正は手入力してください。']),lines=[],seen=new Set(),groups=new Map();
@@ -365,6 +391,7 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
   for(const e of effects){for(const m of e.effect.matchAll(/《([^》]+)》のLv[+＋](\d+)/g)){const target=effects.find(x=>normalizedName(x.name)===normalizedName(m[1]));if(target)extraLevels.set(target,(extraLevels.get(target)||0)+Number(m[2]));}}
   const rolls=[];
   const parts=effects.map(e=>calculatedEffect({...e,lv:e.lv+(extraLevels.get(e)||0)},stage.b));
+  for(const part of parts)if(!stageEffectSummary([part]))warnings.add(`「${combo.name}」：《${displayEffectName(part.e.name)}》の効果量を読み取れません。原文：${part.e.effect}`);
   const timings=comboTiming(effects);
   const difficulties=[...new Set(effects.map(e=>e.difficulty).filter(x=>x&&x!=='―'))].join('／');
   const limits=[...new Set(effects.map(e=>e.limit).filter(x=>x&&x!=='―'))].join('／');
@@ -403,9 +430,11 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
    const external=externalComboNotes(sheet,combo,stage);
    if(external.length)body.push('','【コンボ外効果】',...external);
   }
-  const groupKey=JSON.stringify([combo.name,combo.refs,combo.skill,combo.target,combo.range,combo.cost]);
+  const groupKey=JSON.stringify([combo.name,combo.refs,combo.skill,combo.target,combo.range,combo.cost,...(conditionMode==='separate'?[stage.label]:[])]);
   if(!groups.has(groupKey)){
-   const header=[...(startDecoration?[startDecoration]:[]),...decoratedComboTitle(combo.name),'',...wrapComboEffects(body[3],startDecoration,endDecoration),...body.slice(4,6)];
+   const title=decoratedComboTitle(combo.name);
+   if(conditionMode==='separate')title[0]+=`（${stage.label}）`;
+   const header=[...(startDecoration?[startDecoration]:[]),...title,'',...wrapComboEffects(body[3],startDecoration,endDecoration),...body.slice(4,6)];
    groups.set(groupKey,{header,summaries:[],external:[],rolls:[],cost});
   }
   const group=groups.get(groupKey);
@@ -431,6 +460,13 @@ function decodeTextFile(buffer){
  if(bytes[0]===0xfe&&bytes[1]===0xff)return new TextDecoder('utf-16be').decode(bytes);
  try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
  catch(e){return new TextDecoder('shift_jis').decode(bytes);}
+}
+function setupDecorationPresets(selectId,topId,bottomId){
+ const select=$(selectId),top=$(topId),bottom=$(bottomId);
+ select.replaceChildren(...DECORATION_PRESETS.map((preset,index)=>new Option(preset.name,String(index))),new Option('自由編集','custom'));
+ const sync=()=>{const index=DECORATION_PRESETS.findIndex(p=>p.top===top.value&&p.bottom===bottom.value);select.value=index<0?'custom':String(index);};
+ select.addEventListener('change',()=>{if(select.value==='custom')return;const preset=DECORATION_PRESETS[Number(select.value)];top.value=preset.top;bottom.value=preset.bottom;});
+ top.addEventListener('input',sync);bottom.addEventListener('input',sync);sync();
 }
 const sheetDrop=$('sheetText');
 let sheetFileLoad=0;
@@ -465,16 +501,19 @@ $('scanWeapons').addEventListener('click',scanTextWeapons);
 $('convertText').addEventListener('click',()=>{
  try{
  const sheet=readSheet($('sheetText').value);const ix=$('weaponChoice').value;const weapon=ix===''?null:sheet.weapons[Number(ix)];
- const result=createTextPalette(sheet,$('levelRule').value,weapon,$('comboEndDecoration').value,$('comboStartDecoration').value);$('decorated').value=result.commands;
+ const result=createTextPalette(sheet,$('levelRule').value,weapon,$('comboEndDecoration').value,$('comboStartDecoration').value,$('textConditionMode').value);$('decorated').value=result.commands;
  $('textWarnings').textContent=[`Lv補正：${result.origin?'起源種':'通常'}／生成：${sheet.combos.length}コンボ（段階別に展開）`,...result.warnings].join('\n');
  }catch(e){setStatus('テキスト変換に失敗：'+e.message,'err');}
 });
 $('copyDecorated').addEventListener('click',async()=>{try{if(!$('decorated').value)throw new Error('先にコンボを生成してください。');await navigator.clipboard.writeText($('decorated').value);setStatus('装飾チャパレをコピーしました。','ok');}catch(e){$('decorated').focus();$('decorated').select();setStatus('コピーできませんでした。選択されたテキストをCtrl+Cでコピーしてください。','err');}});
+setupDecorationPresets('textDecorationPreset','comboStartDecoration','comboEndDecoration');
+setupDecorationPresets('manualDecorationPreset','manualTop','manualBottom');
 
 function manualSigned(value){value=String(value).trim();return !value?'':/^[+\-－−]/.test(value)?value:'+'+value;}
 function generateManualCombo(data){
  if(!data.name.trim())throw new Error('コンボ名を入力してください。');
- const title=data.titleLeft+data.name.trim()+data.titleRight;
+ if(data.conditionMode==='separate'&&data.stages.length){return data.stages.map(stage=>generateManualCombo({...data,conditionMode:'combined',titleCondition:stage.condition,stages:[stage]})).join('\n\n');}
+ const title=data.titleLeft+data.name.trim()+data.titleRight+(data.titleCondition?`（${data.titleCondition}）`:'');
  const body=[...(data.top?[data.top]:[]),title,...(data.reading?[data.reading]:[]),''];
  if(data.effects)body.push(...wrapComboEffects(data.effects,data.top,data.bottom));
  const meta=[data.timing,data.skill?`〈${data.skill.replace(/[〈〉]/g,'')}〉`:'',data.difficulty].filter(Boolean).join('｜');
@@ -541,6 +580,7 @@ function addManualStage(values={},afterRow=null){
 function readManualData(){
  const data={};for(const key of ['name','reading','effects','timing','skill','difficulty','target','range','cost','limit','top','bottom','titleLeft','titleRight','notes'])data[key]=$('manual'+key[0].toUpperCase()+key.slice(1)).value.trim();
  data.stages=Array.from($('manualStages').children).map(readManualStage);
+ data.conditionMode=$('manualConditionMode').value;
  return data;
 }
 function previewManual(){ $('manualPreview').textContent=$('manualOutput').value.split('\n')[0].replace(/\\n/g,'\n'); }
@@ -554,5 +594,55 @@ $('manualAppend').addEventListener('click',()=>emitManual(true));
 $('manualOutput').addEventListener('input',previewManual);
 $('manualCopy').addEventListener('click',async()=>{try{if(!$('manualOutput').value)throw new Error('先にチャパレを生成してください。');await navigator.clipboard.writeText($('manualOutput').value);$('manualStatus').textContent='コピーしました。';}catch(e){$('manualOutput').focus();$('manualOutput').select();$('manualStatus').textContent='出力を選択しました。Ctrl+Cでコピーしてください。';}});
 addManualStage({condition:'100%未満',crit:'10'});addManualStage({condition:'100%以上',crit:'10'});
+
+// Public JSON is fetched as data, without executing remote scripts.
+function sheetJsonToText(data){
+ if(!data||typeof data!=='object'||typeof data.characterName!=='string')throw new Error('キャラクターデータを取得できません。公開設定とURLを確認してください。');
+ const v=k=>data[k]==null?'':String(data[k]);
+ const count=k=>Math.min(1000,Math.max(0,Number(data[k])||0));
+ const row=values=>values.map(s=>String(s??'').replace(/\r\n?|\n/g,'&lt;br&gt;')).join(' / ');
+ const lines=['キャラクター名：'+v('characterName'),'■能力値と技能■'];
+ for(const [name,key] of [['肉体','Body'],['感覚','Sense'],['精神','Mind'],['社会','Social']])lines.push(`【${name}】：${v('sttTotal'+key)||'0'}`);
+ for(const [name,key] of [['白兵','Melee'],['回避','Dodge'],['射撃','Ranged'],['知覚','Percept'],['RC','RC'],['意志','Will'],['交渉','Negotiate'],['調達','Procure']])lines.push(`〈${name}〉：${v('skillTotal'+key)||v('skill'+key)||'0'}`);
+ for(const [base,key] of [['運転','Ride'],['芸術','Art'],['知識','Know'],['情報','Info']])for(let i=1;i<=count('skill'+key+'Num');i++){
+  const specialty=v('skill'+key+i+'Name');if(!specialty)continue;
+  const name=new RegExp('^'+base+'[:：]').test(specialty)?specialty:base+':'+specialty;
+  lines.push(`〈${name}〉：${v('skillTotal'+key+i)||v('skill'+key+i)||'0'}`);
+ }
+ lines.push('■エフェクト■',row(['《エフェクト名》','Lv','タイミング','難易度','対象','射程','侵蝕値','制限','効果']));
+ for(let i=1;i<=count('effectNum');i++){const p='effect'+i;if(!v(p+'Name'))continue;lines.push(row(['《'+v(p+'Name')+'》',...['Lv','Timing','Dfclty','Target','Range','Encroach','Restrict','Note'].map(k=>v(p+k))]));}
+ lines.push('■コンボ■',row(['コンボ名','組み合わせ','技能','命中','攻撃力','対象','射程','侵蝕値','条件','効果']));
+ for(let i=1;i<=count('comboNum');i++){
+  const p='combo'+i;if(!v(p+'Name'))continue;
+  const indices=Object.keys(data).map(k=>k.match(new RegExp('^'+p+'Condition(\\d+)$'))).filter(Boolean).map(m=>Number(m[1])).filter(n=>v(p+'Condition'+n)).sort((a,b)=>a-b);
+  if(!indices.length)indices.push(1);
+  for(const n of indices){const dice=v(p+'Dice'+n),hit=dice?`(${dice})dx+(${v(p+'Fixed'+n)||'0'})@${v(p+'Crit'+n)||'10'}`:'';lines.push(row([v(p+'Name'),v(p+'Combo'),v(p+'Skill'),hit,v(p+'Atk'+n),v(p+'Target'),v(p+'Range'),v(p+'Encroach'),v(p+'Condition'+n),v(p+'Note')]));}
+ }
+ lines.push('■アイテム■','・武器',row(['名前','常備化','経験点','種別','技能','命中','攻撃力','ガード値','射程','解説']));
+ for(let i=1;i<=count('weaponNum');i++){const p='weapon'+i;if(v(p+'Name'))lines.push(row(['Name','Stock','Exp','Type','Skill','Acc','Atk','Guard','Range','Note'].map(k=>v(p+k))));}
+ lines.push('・防具','■ロイス■');for(let i=1;i<=Math.max(7,count('loisNum'));i++)lines.push(row(['Name','Relation','Note'].map(k=>v('lois'+i+k))));
+ return lines.join('\n');
+}
+function publicSheetJsonUrl(raw){
+ let u;try{u=new URL(raw);}catch(e){throw new Error('ゆとシートのURLを入力してください。');}
+ if(u.protocol!=='https:'||!['yutorize.work','yutorize.2-d.jp'].includes(u.hostname)||u.username||u.password||u.port)throw new Error('現在はゆと工公式鯖のHTTPS URLに対応しています。');
+ if(!/^\/ytsheet\/dx3rd\/(?:index\.cgi)?$/.test(u.pathname)||!u.searchParams.get('id'))throw new Error('DX3rdのシートURL（?id=…）を指定してください。');
+ u.hostname='yutorize.work';const id=u.searchParams.get('id'),log=u.searchParams.get('log');u.search='';u.searchParams.set('id',id);if(log)u.searchParams.set('log',log);u.searchParams.set('mode','json');u.hash='';return u.href;
+}
+// URL import UI
+$('loadSheetUrl').addEventListener('click',async()=>{
+ const status=$('sheetUrlStatus'),button=$('loadSheetUrl');let url;
+ try{url=publicSheetJsonUrl($('sheetUrl').value.trim());}catch(e){status.textContent=e.message;return;}
+ button.disabled=true;status.textContent='シートを読み込み中…';const request=++sheetFileLoad;
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
+ try{
+  const response=await fetch(url,{mode:'cors',credentials:'omit',signal:controller.signal});if(!response.ok)throw new Error('取得できません（HTTP '+response.status+'）。');
+  const text=sheetJsonToText(await response.json());
+  if(request!==sheetFileLoad){status.textContent='入力が変更されたため読込の反映を中止しました。';return;}
+  $('sheetText').value=text;const sheet=scanTextWeapons();status.textContent=`「${sheet.name}」を読み込みました。内容を確認してコンボを生成してください。`;$('sheetFileStatus').textContent='URLから取得したデータを反映しました。';
+ }catch(e){status.textContent=(e.name==='AbortError'?'読込がタイムアウトしました。':e.message)+' 読み込めない場合はテキスト貼り付け・txtドロップを使用してください。';}
+ finally{clearTimeout(timeout);button.disabled=false;}
+});
+$('sheetUrl').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();$('loadSheetUrl').click();}});
 
 </script></body></html>
