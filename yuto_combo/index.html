@@ -136,6 +136,9 @@
 <div class="controls"><label class="opt">使用武器 <select id="weaponChoice"><option value="">未指定</option></select></label>
 <button class="btn-ghost" id="scanWeapons">武器候補を読み込む</button>
 <label class="opt">Lv補正 <select id="levelRule"><option value="auto">自動（ロイス欄の起源種を判別）</option><option value="normal">通常</option><option value="origin">起源種</option></select></label></div>
+<p class="hint">武器の指定は上の「使用武器」です。選択すると、下の命中修正・攻撃力を全攻撃コンボの式に反映します。候補にない作成武器や素手も直接入力できます。</p>
+<div class="controls"><label>武器の命中修正<input id="weaponHit" inputmode="text" placeholder="例：0、-1"></label><label>武器の攻撃力<input id="weaponAttack" inputmode="text" placeholder="例：4、8"></label></div>
+<p class="hint" id="weaponSelectionStatus" role="status">武器を選択するか、命中修正・攻撃力を直接入力してください。変更後は再生成してください。</p>
 <label class="opt">装飾テンプレート<select id="textDecorationPreset" aria-label="装飾テンプレート"></select></label>
 <p class="hint">テンプレートを選ぶと上下の装飾を変更します。選択後も下の欄で自由に編集できます。</p>
 <label class="opt">コンボ名の装飾セット<select id="textTitlePreset"></select></label>
@@ -331,7 +334,9 @@ function readSheet(text){
  const abilities={},skills={};
  for(const m of text.matchAll(/^【(肉体|感覚|精神|社会)】：\s*(\d+)/gm))abilities[m[1]]=Number(m[2]);
  for(const m of text.matchAll(/^〈([^〉]+)〉：\s*(\d+)/gm))skills[m[1]]=Number(m[2]);
- const items=sectionOf(text,'アイテム');const weapons=(items.split('・武器')[1]||'').split('・防具')[0].split(/\r?\n/).filter(l=>l.includes(' / ')).map(l=>l.trim().split(/\s+\/(?=\s)/)).filter(r=>r[0]!=='名前').map(r=>({name:r[0],hit:r[5],attack:r[6]}));
+ const items=sectionOf(text,'アイテム');const weapons=(items.split('・武器')[1]||'').split('・防具')[0].split(/\r?\n/).filter(l=>l.includes(' / ')).map(l=>l.trim().split(/\s+\/(?=\s)/).map(value=>value.trim())).filter(r=>r[0]!=='名前').map(r=>({name:r[0],hit:r[5],attack:r[6]}));
+ const cyberArm=cyberArmWeapon(effects);
+ if(cyberArm){const index=weapons.findIndex(w=>normalizedName(w.name)==='サイバーアーム');if(index>=0)weapons[index]={...weapons[index],...cyberArm};else weapons.push(cyberArm);}
  return {name:(text.match(/^キャラクター名：(.+)/m)||[])[1]||'キャラクター',effects,combos,abilities,skills,weapons,origin:/起源種/.test(sectionOf(text,'ロイス'))};
 }
 function arithmetic(s){
@@ -356,6 +361,14 @@ function calculatedEffect(e,bonus){
  text=text.replace(/[\[［]([\d\s+*×÷/－−-]+)[\]］]/g,(all,expr)=>{const n=arithmetic(expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/[－−]/g,'-'));return n===null?all:String(n);});
  text=text.replace(/((?:攻撃力|ガード値|ガード|装甲値|装甲)(?:\s*[:：])?)([+\-]?\d+(?:[+\-]\d+)+)/g,(all,label,expr)=>{const n=arithmetic(expr);return n===null?all:label+(expr.startsWith('+')&&n>=0?'+':'')+n;});
  return {e,lv,text};
+}
+function cyberArmWeapon(effects){
+ const effect=effects.find(e=>normalizedName(e.name)==='サイバーアーム');
+ if(!effect)return null;
+ const computed=calculatedEffect(effect,0);
+ const attack=computed.text.match(/攻撃力\s*[+:：]?\s*([+-]?\d+)(?![\d+×*])/);
+ const hit=computed.text.match(/命中\s*[:：]?\s*([+-]?\d+)/);
+ return {name:'サイバーアーム',hit:hit?String(Number(hit[1])):'',attack:attack?String(Number(attack[1])):'',effectLinked:true,effectLevel:effect.lv};
 }
 function conditionAllowed(c,stage){const m=c.match(/(\d+)[%％](以上|未満)/);return !m||(m[2]==='以上'?stage>=Number(m[1]):stage<Number(m[1]));}
 // Only the first numeric dice term is imported; bonuses, skill and C stay tool-calculated.
@@ -571,7 +584,27 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
  ].join('\n'));
  return {commands:lines.join('\n'),warnings:[...warnings],issues,issueDetails,origin};
 }
-function scanTextWeapons(){const sheet=readSheet($('sheetText').value);const select=$('weaponChoice');select.replaceChildren(new Option('未指定（作成武器等は手入力）',''));sheet.weapons.forEach((w,i)=>select.add(new Option(w.name,String(i))));return sheet;}
+function syncWeaponFields(){
+ const sheet=readSheet($('sheetText').value),index=$('weaponChoice').value;
+ const weapon=index===''?null:sheet.weapons[Number(index)];
+ $('weaponHit').value=weapon?.hit??'';$('weaponAttack').value=weapon?.attack??'';
+ $('weaponHit').readOnly=Boolean(weapon?.effectLinked);$('weaponAttack').readOnly=Boolean(weapon?.effectLinked);
+ $('weaponSelectionStatus').textContent=weapon?.effectLinked?`選択中：サイバーアーム（エフェクトLv${weapon.effectLevel}と連動）。命中修正：${weapon.hit||'読取不可'}／攻撃力：${weapon.attack||'読取不可'}。常時のため侵蝕率によるLv上昇は加えません。Lv変更後は再生成してください。`:weapon?`選択中：${weapon.name}。下の命中修正・攻撃力を確認してください。`:'武器を選択するか、命中修正・攻撃力を直接入力してください。';
+}
+function scanTextWeapons(){
+ const sheet=readSheet($('sheetText').value),select=$('weaponChoice');
+ const previous=select.options?.[select.selectedIndex]?.textContent;
+ select.replaceChildren(new Option('未指定（下の欄へ直接入力も可）',''));
+ sheet.weapons.forEach((w,i)=>select.add(new Option(w.name,String(i))));
+ const match=sheet.weapons.findIndex(w=>w.name===previous);if(match>=0)select.value=String(match);
+ syncWeaponFields();return sheet;
+}
+function selectedWeapon(sheet,index,hit,attack){
+ const base=index===''?null:sheet.weapons[Number(index)];
+ if(base?.effectLinked)return base;
+ if(!base&&!hit.trim()&&!attack.trim())return null;
+ return {name:base?.name||'手入力武器',hit:hit.normalize('NFKC').trim().replace(/^\+/,''),attack:attack.normalize('NFKC').trim().replace(/^\+/,'')};
+}
 function setStatus(message,kind){$('textWarnings').textContent=message;$('textWarnings').style.color=kind==='err'?'var(--warn)':'var(--text-dim)';}
 function decodeTextFile(buffer){
  const bytes=new Uint8Array(buffer);
@@ -624,9 +657,10 @@ sheetDrop.addEventListener('drop',async event=>{
  }catch(e){if(request===sheetFileLoad)report('ファイルの読み込みに失敗しました。再度ドロップするか、本文を貼り付けてください。');}
 });
 $('scanWeapons').addEventListener('click',scanTextWeapons);
+$('weaponChoice').addEventListener('change',syncWeaponFields);
 $('convertText').addEventListener('click',()=>{
  try{
- const sheet=readSheet($('sheetText').value);const ix=$('weaponChoice').value;const weapon=ix===''?null:sheet.weapons[Number(ix)];
+ const sheet=readSheet($('sheetText').value);const ix=$('weaponChoice').value;const weapon=selectedWeapon(sheet,ix,$('weaponHit').value,$('weaponAttack').value);
  const result=createTextPalette(sheet,$('levelRule').value,weapon,$('comboEndDecoration').value,$('comboStartDecoration').value,$('textConditionMode').value,$('textTitleLeft').value,$('textTitleRight').value);$('decorated').value=result.commands;
  const alert=$('conversionAlert');alert.hidden=result.issues.length===0;alert.textContent=result.issues.length?`⚠ 修正が必要です（${result.issues.length}項目）\nこのまま使用せず、該当箇所を確認・修正してください。\n\n${result.issues.join('\n\n')}`:'';
  $('textWarnings').textContent=[`Lv補正：${result.origin?'起源種':'通常'}／生成：${sheet.combos.length}コンボ（段階別に展開）`,...result.warnings].join('\n');
