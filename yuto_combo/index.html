@@ -317,7 +317,7 @@ function wrapComboEffects(text,top,bottom){
 }
 function standardEffectBrackets(s){return String(s).replace(/≪/g,'《').replace(/≫/g,'》');}
 function decodeSheet(s){return standardEffectBrackets(s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&').replace(/<br\s*\/?>/gi,'\n'));}
-function normalizedName(s){return s.normalize('NFKC').replace(/\([^)]*\)/g,'').replace(/^[┗└\s]+/,'').replace(/\s/g,'').replace(/^(?:コンセントレイト|コンセ|C)(?=[:：]|$)/i,'C').replace(/：/g,':');}
+function normalizedName(s){return s.normalize('NFKC').replace(/\([^)]*\)/g,'').replace(/^[┗└\s]+/,'').replace(/\s/g,'').replace(/([ァ-ヶ])[―—‐‑−－-](?=[ァ-ヶ:：]|$)/g,'$1ー').replace(/^(?:コンセントレイト|コンセ|C)(?=[:：]|$)/i,'C').replace(/：/g,':');}
 function sectionOf(text,name){const m=text.match(new RegExp('■'+name+'■([\\s\\S]*?)(?=\\n■|$)'));return m?m[1]:'';}
 // Column boundaries have surrounding padding; slashes inside prose remain intact.
 function sheetRows(text,name){return sectionOf(text,name).split(/\r?\n/).filter(l=>l.includes(' / ')).map(l=>l.trim().split(/\s+\/(?=\s)/).map(x=>x.trim()));}
