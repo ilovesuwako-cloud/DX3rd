@@ -447,12 +447,14 @@ function stageEffectSummary(parts){
   if(selectedWeapon&&/破壊/.test(p.text))results.push('選択した武器を破壊');
   if(/戦闘移動/.test(p.text)&&!combatMove){results.push('戦闘移動');combatMove=true;}
   if(/全力移動/.test(p.text))results.push('全力移動');
+  if(/カバーリング.*?ガード.*?(?:算出|計算)できない/.test(p.text))results.push('カバーリング時もガード扱いでダメージ計算不可');
   const data=p.text.match(/(?:ドッジ|行動|装甲)[:：][-+]?\d+|攻撃力\d+|ガード値\d+/g);
   if(data)results.push(...data.map(s=>s.replace('ガード値','ガード')));
   const genericAttack=p.text.match(/攻撃[+＋](\d+)/);
   if(genericAttack)results.push(`攻撃力+${genericAttack[1]}`);
-  if(/装甲無視/.test(p.text)&&/ガード不可/.test(p.text))results.push('装甲無視、ガード不可');
-  else {if(/装甲無視/.test(p.text))results.push('装甲無視');if(/ガード不可/.test(p.text))results.push('ガード不可');}
+  if(/装甲(?:値)?(?:を)?無視/.test(p.text)&&/ガード(?:不可|不能|を行えない|ができない|できない)/.test(p.text))results.push('装甲無視、ガード不可');
+  else {if(/装甲(?:値)?(?:を)?無視/.test(p.text))results.push('装甲無視');if(/ガード(?:不可|不能|を行えない|ができない|できない)/.test(p.text))results.push('ガード不可');
+   if(/ガード(?:値)?(?:を)?無視/.test(p.text))results.push('ガード無視');}
   if(/(?:攻撃力|ダメージ)[+＋]\s*[\[［]?使用している武器攻撃力/.test(p.text))weaponAttack=true;
   const matches=p.text.match(/(?:【行動値】|行動値|攻撃力|ダイス|達成値|C値|ダメージ)\s*[+＋\-－−ｰ]\s*\d+(?:個|D)?|C\s*[-－−]\s*\d+|シナリオ\d+回|シーン\d+回/g);
   if(matches)results.push(...matches.map(s=>{
