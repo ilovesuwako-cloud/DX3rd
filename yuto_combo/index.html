@@ -133,6 +133,14 @@
 <p class="hint">ゆとシートの「テキスト出力」を貼り付けます。コンボ欄の命中式から基礎ダイスを取得し、エフェクト情報から補正を計算します。生成したチャパレをコピーして使用できます。</p>
 <textarea id="sheetText" aria-label="ゆとシートのテキスト本文。txtファイルのドロップにも対応" placeholder="テキストを貼り付けるか、.txtファイルをここにドロップ&#10;&#10;キャラクター名：…&#10;■エフェクト■&#10;…&#10;■コンボ■"></textarea>
 <p class="hint" id="sheetFileStatus" role="status">.txtファイルを入力欄にドロップして読み込むこともできます。</p>
+<div style="border:1px solid var(--line);border-radius:9px;padding:14px">
+<h3 style="margin:0 0 10px;font-size:14px">出力する単体エフェクト</h3>
+<p class="hint">読み込んだエフェクトから、単体使用のチャパレを作るものだけチェックしてください。常時も必要なら選択できます。上下装飾・条件の出力設定はコンボと共通です。</p>
+<div class="controls" style="margin-top:10px"><button class="btn-ghost" id="effectSelectAll">全て選択</button><button class="btn-ghost" id="effectSelectNone">選択解除</button><button class="btn-ghost" id="refreshEffectList">一覧を更新</button></div>
+<div id="singleEffectList" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin-top:10px"></div>
+<p id="singleEffectStatus" role="status" class="hint">シートを読み込むと一覧を表示します。</p>
+<label class="opt" style="margin-top:10px"><input type="checkbox" id="includeCombos" checked>登録コンボも出力する（外すと選択した単体エフェクトのみ）</label>
+</div>
 <div class="controls"><label class="opt">使用武器 <select id="weaponChoice"><option value="">未指定</option></select></label>
 <button class="btn-ghost" id="scanWeapons">武器候補を読み込む</button>
 <label class="opt">Lv補正 <select id="levelRule"><option value="auto">自動（ロイス欄の起源種を判別）</option><option value="normal">通常</option><option value="origin">起源種</option></select></label></div>
@@ -285,6 +293,21 @@ const TITLE_PRESETS=[
  [36,'⚡','⚡'],[37,'⌖','⌖'],[38,'⊹','⊹']
 ];
 function textDisplayWidth(text){return Array.from(text).reduce((n,c)=>n+(/[\u0020-\u007e\uff61-\uff9f]/.test(c)?1:2),0);}
+function groupPaletteByCondition(entries){
+ const groups=new Map();
+ for(const entry of entries){if(!groups.has(entry.condition))groups.set(entry.condition,[]);groups.get(entry.condition).push(entry.commands);}
+ const rank=label=>{const m=String(label).normalize('NFKC').match(/\d+/);return m?Number(m[0])+(/未満|以下/.test(label)?-0.5:0):Number.MAX_SAFE_INTEGER;};
+ return [...groups].sort((a,b)=>rank(a[0])-rank(b[0])).map(([condition,commands])=>`▼▼▼エフェクト/コンボ(${condition})▼▼▼\n${commands.join('\n\n')}`).join('\n\n');
+}
+function mergeConditionOutputs(previous,next){
+ const entries=[];
+ for(const text of [previous,next].filter(s=>s.trim())){
+  const sections=text.split(/^▼▼▼エフェクト\/コンボ\(([^\n]*)\)▼▼▼\s*\n/gm);
+  if(sections.length===1||sections[0].trim())return [previous,next].filter(Boolean).join('\n\n');
+  for(let i=1;i<sections.length;i+=2)entries.push({condition:sections[i],commands:sections[i+1].trim()});
+ }
+ return groupPaletteByCondition(entries);
+}
 function conditionEffectLines(primary,damage,extras=[]){
  const lines=[];
  for(const values of [primary,damage]){const filled=values.filter(Boolean);if(filled.length)lines.push('|'+filled.join('|')+'|');}
@@ -370,6 +393,44 @@ function cyberArmWeapon(effects){
  const hit=computed.text.match(/命中\s*[:：]?\s*([+-]?\d+)/);
  return {name:'サイバーアーム',hit:hit?String(Number(hit[1])):'',attack:attack?String(Number(attack[1])):'',effectLinked:true,effectLevel:effect.lv};
 }
+function createSingleEffectPalette(sheet,indices,rule,top,bottom,mode){
+ const origin=rule==='origin'||(rule==='auto'&&sheet.origin),lines=[],issues=[],entries=[];
+ for(const index of indices){
+  const effect=sheet.effects[index];if(!effect)continue;
+  const threshold=effect.limit?.normalize('NFKC').match(/(\d+)%/);const minimum=threshold?Number(threshold[1]):0;
+  const boundaries=new Set(origin?[0,80,100]:[0,100]);if(minimum)boundaries.add(minimum);
+  const points=[...boundaries].sort((a,b)=>a-b);
+  const stages=points.map((at,i)=>({at,label:at===0?`${points[i+1]||100}%未満`:`${at}%以上`,bonus:/常時/.test(effect.timing)?0:origin?(at>=100?2:at>=80?1:0):(at>=100?1:0)})).filter(s=>s.at>=minimum);
+  const blocks=[];
+  for(const stage of stages){
+   const computed=calculatedEffect(effect,stage.bonus),summary=stageEffectSummary([computed]);
+   if(!summary)issues.push(`エフェクト：《${displayEffectName(effect.name)}》\n条件：${stage.label}\n修正項目：効果・効果量の読み取り\n原文：${effect.effect}\n理由：対応する効果として読み取れません。数値補正は未反映（0扱い）です。\n修正方法：手入力の自由入力欄で補足してください。`);
+   blocks.push({stage,summary});
+  }
+  const groups=mode==='separate'?blocks.map(block=>[block]):[blocks];
+  for(const group of groups){if(!group.length)continue;
+   const title=`《${displayEffectName(effect.name)}》${mode==='separate'?`(${group[0].stage.label})`:''}`;
+   const body=[...(top?[top]:[]),title,[effect.timing,effect.difficulty].filter(s=>s&&!/^[―—-]$/.test(s)).join('｜'),[effect.target,effect.range,effect.cost?'侵蝕値：'+effect.cost:'',effect.limit&&!/^[―—-]$/.test(effect.limit)?'制限：'+effect.limit:''].filter(Boolean).join('｜'),''];
+   for(const block of group){if(mode!=='separate')body.push('▼'+block.stage.label);body.push(...automaticConditionLines(block.summary));}
+   if(bottom)body.push(bottom);const block=[body.join('\\n')];
+   if(effect.cost&&!/^[―—-]$/.test(effect.cost))block.push(':侵蝕+'+effect.cost);
+   lines.push(...block);if(mode==='separate')entries.push({condition:group[0].stage.label,commands:block.join('\n')});
+  }
+ }
+ return {commands:mode==='separate'?groupPaletteByCondition(entries):lines.join('\n'),issues,count:indices.length,entries};
+}
+function refreshSingleEffects(sheet=readSheet($('sheetText').value)){
+ const list=$('singleEffectList');const same=list.dataset.character===sheet.name;
+ const selected=new Set(same?Array.from(list.querySelectorAll('input:checked')).map(input=>input.dataset.key):[]);
+ list.replaceChildren();list.dataset.character=sheet.name;
+ sheet.effects.forEach((effect,index)=>{
+  const key=normalizedName(effect.name)+'#'+index,label=document.createElement('label'),input=document.createElement('input');
+  label.className='opt';input.type='checkbox';input.value=String(index);input.dataset.key=key;input.checked=selected.has(key);
+  input.addEventListener('change',updateSingleEffectStatus);
+  label.append(input,document.createTextNode(`《${displayEffectName(effect.name)}》 Lv${effect.lv}／${effect.timing||'未記載'}`));list.appendChild(label);
+ });updateSingleEffectStatus();return sheet;
+}
+function updateSingleEffectStatus(){const list=$('singleEffectList');$('singleEffectStatus').textContent=`${list.querySelectorAll('input').length}エフェクト／${list.querySelectorAll('input:checked').length}件選択中` ;}
 function conditionAllowed(c,stage){const m=c.match(/(\d+)[%％](以上|未満)/);return !m||(m[2]==='以上'?stage>=Number(m[1]):stage<Number(m[1]));}
 // Only the first numeric dice term is imported; bonuses, skill and C stay tool-calculated.
 function comboBaseDice(hit){
@@ -497,7 +558,7 @@ function variableCost(effects,fallback){
 function createTextPalette(sheet,rule,weapon,endDecoration='✿･･･････●･･･････✿･･･････●･･･････✿',startDecoration='✿･･･････○･･･････✿･･･････○･･･････✿',conditionMode='combined',titleLeft='◤',titleRight='◢'){
  const origin=rule==='origin'||(rule==='auto'&&sheet.origin);const stages=origin?[{label:'80%未満',at:0,b:0},{label:'80%以上',at:80,b:1},{label:'100%以上',at:100,b:2}]:[{label:'100%未満',at:0,b:0},{label:'100%以上',at:100,b:1}];
  if(!origin&&sheet.combos.some(c=>/80[%％]以上/.test(c.condition))){stages[0].label='80%未満';stages.splice(1,0,{label:'80%以上',at:80,b:0});}
- const warnings=new Set(['試作：自然文の効果を完全には解釈できません。生成式と原文を照合し、未反映の補正は手入力してください。']),issueGroups=new Map(),lines=[],seen=new Set(),groups=new Map();
+ const warnings=new Set(['試作：自然文の効果を完全には解釈できません。生成式と原文を照合し、未反映の補正は手入力してください。']),issueGroups=new Map(),lines=[],entries=[],seen=new Set(),groups=new Map();
  const addIssue=(combo,stage,effect,item,original,reason,fix)=>{
   const key=JSON.stringify([effect,item,original,reason]);
   if(!issueGroups.has(key))issueGroups.set(key,{effect,item,original,reason,fix,combos:new Map()});
@@ -561,7 +622,7 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
    const title=decoratedComboTitle(combo.name,titleLeft,titleRight);
    if(conditionMode==='separate')title[0]+=`（${stage.label}）`;
    const header=[...(startDecoration?[startDecoration]:[]),...title,'',...wrapComboEffects(body[3],startDecoration,endDecoration),...body.slice(4,6)];
-   groups.set(groupKey,{header,summaries:[],external:[],rolls:[],cost});
+   groups.set(groupKey,{header,summaries:[],external:[],rolls:[],cost,condition:stage.label});
   }
   const group=groups.get(groupKey);
   group.summaries.push(`▼${stage.label}`,...automaticConditionLines(stageEffectSummary(parts),Boolean(combo.hit&&combo.hit.trim())));
@@ -573,7 +634,8 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
   const body=[...group.header,'',...group.summaries];
   if(group.external.length)body.push('','【コンボ外効果】',...group.external);
   if(endDecoration)body.push(endDecoration);
-  lines.push(body.join('\\n'),`:侵蝕+${group.cost}`,...group.rolls);
+  const block=[body.join('\\n'),`:侵蝕+${group.cost}`,...group.rolls];lines.push(...block);
+  if(conditionMode==='separate')entries.push({condition:group.condition,commands:block.join('\n')});
  }
  if(!sheet.combos.length)warnings.add('コンボが見つかりません。テキスト出力の内容を確認してください。');
  const issueDetails=[...issueGroups.values()].map(group=>({...group,combos:[...group.combos].map(([name,conditions])=>({name,conditions:[...conditions]}))}));
@@ -582,7 +644,7 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
   '影響するコンボ：',...issue.combos.map(combo=>`・${combo.name}（${combo.conditions.join('／')}）`),
   `修正項目：${issue.item}`,`原文：${issue.original}`,`理由：${issue.reason}`,`修正方法：${issue.fix}`
  ].join('\n'));
- return {commands:lines.join('\n'),warnings:[...warnings],issues,issueDetails,origin};
+ return {commands:conditionMode==='separate'?groupPaletteByCondition(entries):lines.join('\n'),warnings:[...warnings],issues,issueDetails,origin,entries};
 }
 function syncWeaponFields(){
  const sheet=readSheet($('sheetText').value),index=$('weaponChoice').value;
@@ -597,7 +659,7 @@ function scanTextWeapons(){
  select.replaceChildren(new Option('未指定（下の欄へ直接入力も可）',''));
  sheet.weapons.forEach((w,i)=>select.add(new Option(w.name,String(i))));
  const match=sheet.weapons.findIndex(w=>w.name===previous);if(match>=0)select.value=String(match);
- syncWeaponFields();return sheet;
+ syncWeaponFields();refreshSingleEffects(sheet);return sheet;
 }
 function selectedWeapon(sheet,index,hit,attack){
  const base=index===''?null:sheet.weapons[Number(index)];
@@ -637,7 +699,8 @@ sheetDrop.addEventListener('dragover',event=>{
  sheetDrop.style.borderColor='var(--volt)';sheetDrop.style.boxShadow='0 0 0 3px rgba(201,168,255,.2)';
 });
 sheetDrop.addEventListener('dragleave',clearDropHighlight);
-sheetDrop.addEventListener('input',()=>{sheetFileLoad++;$('sheetFileStatus').textContent='テキストを編集しました。';});
+let effectListTimer;
+sheetDrop.addEventListener('input',()=>{sheetFileLoad++;$('sheetFileStatus').textContent='テキストを編集しました。';clearTimeout(effectListTimer);effectListTimer=setTimeout(()=>refreshSingleEffects(),200);});
 sheetDrop.addEventListener('drop',async event=>{
  if(!isFileDrag(event))return;
  event.preventDefault();clearDropHighlight();
@@ -658,12 +721,18 @@ sheetDrop.addEventListener('drop',async event=>{
 });
 $('scanWeapons').addEventListener('click',scanTextWeapons);
 $('weaponChoice').addEventListener('change',syncWeaponFields);
+$('refreshEffectList').addEventListener('click',()=>refreshSingleEffects());
+for(const [id,checked] of [['effectSelectAll',true],['effectSelectNone',false]])$(id).addEventListener('click',()=>{for(const input of $('singleEffectList').querySelectorAll('input'))input.checked=checked;updateSingleEffectStatus();});
 $('convertText').addEventListener('click',()=>{
  try{
  const sheet=readSheet($('sheetText').value);const ix=$('weaponChoice').value;const weapon=selectedWeapon(sheet,ix,$('weaponHit').value,$('weaponAttack').value);
- const result=createTextPalette(sheet,$('levelRule').value,weapon,$('comboEndDecoration').value,$('comboStartDecoration').value,$('textConditionMode').value,$('textTitleLeft').value,$('textTitleRight').value);$('decorated').value=result.commands;
+ refreshSingleEffects(sheet);
+ const result=$('includeCombos').checked?createTextPalette(sheet,$('levelRule').value,weapon,$('comboEndDecoration').value,$('comboStartDecoration').value,$('textConditionMode').value,$('textTitleLeft').value,$('textTitleRight').value):{commands:'',issues:[],warnings:[],origin:$('levelRule').value==='origin'||($('levelRule').value==='auto'&&sheet.origin)};
+ const indices=Array.from($('singleEffectList').querySelectorAll('input:checked')).map(input=>Number(input.value));
+ const singles=createSingleEffectPalette(sheet,indices,$('levelRule').value,$('comboStartDecoration').value,$('comboEndDecoration').value,$('textConditionMode').value);
+ result.commands=$('textConditionMode').value==='separate'?groupPaletteByCondition([...(result.entries||[]),...singles.entries]):[result.commands,singles.commands].filter(Boolean).join('\n\n');result.issues.push(...singles.issues);$('decorated').value=result.commands;
  const alert=$('conversionAlert');alert.hidden=result.issues.length===0;alert.textContent=result.issues.length?`⚠ 修正が必要です（${result.issues.length}項目）\nこのまま使用せず、該当箇所を確認・修正してください。\n\n${result.issues.join('\n\n')}`:'';
- $('textWarnings').textContent=[`Lv補正：${result.origin?'起源種':'通常'}／生成：${sheet.combos.length}コンボ（段階別に展開）`,...result.warnings].join('\n');
+ $('textWarnings').textContent=[`Lv補正：${result.origin?'起源種':'通常'}／登録コンボ：${$('includeCombos').checked?sheet.combos.length:0}件／単体エフェクト：${singles.count}件`,...result.warnings].join('\n');
  }catch(e){setStatus('テキスト変換に失敗：'+e.message,'err');}
 });
 $('copyDecorated').addEventListener('click',async()=>{try{if(!$('decorated').value)throw new Error('先にコンボを生成してください。');await navigator.clipboard.writeText($('decorated').value);setStatus('装飾チャパレをコピーしました。','ok');}catch(e){$('decorated').focus();$('decorated').select();setStatus('コピーできませんでした。選択されたテキストをCtrl+Cでコピーしてください。','err');}});
@@ -676,7 +745,7 @@ for(const [listId,index] of [['comboTitleLeftOptions',1],['comboTitleRightOption
 function manualSigned(value){value=String(value).trim();return !value?'':/^[+\-－−]/.test(value)?value:'+'+value;}
 function generateManualCombo(data){
  if(!data.name.trim())throw new Error('コンボ名を入力してください。');
- if(data.conditionMode==='separate'&&data.stages.length){return data.stages.map(stage=>generateManualCombo({...data,conditionMode:'combined',titleCondition:stage.condition,stages:[stage]})).join('\n\n');}
+ if(data.conditionMode==='separate'&&data.stages.length){return groupPaletteByCondition(data.stages.map(stage=>({condition:stage.condition,commands:generateManualCombo({...data,conditionMode:'combined',titleCondition:stage.condition,stages:[stage]})})));}
  const title=data.titleLeft+data.name.trim()+data.titleRight+(data.titleCondition?`（${data.titleCondition}）`:'');
  const body=[...(data.top?[data.top]:[]),title,...(data.reading?[data.reading]:[]),''];
  if(data.effects){const refs=effectRefs(data.effects);body.push(...wrapComboEffects(refs.map(name=>`《${displayEffectName(name)}》`).join('＋'),data.top,data.bottom));}
@@ -750,7 +819,7 @@ function readManualData(){
 function previewManual(){ $('manualPreview').textContent=$('manualOutput').value.split('\n')[0].replace(/\\n/g,'\n'); }
 function emitManual(append){try{const result=generateManualCombo(readManualData());{
  if(!append&&$('manualOutput').value.trim()&&!confirm('現在の出力を、新しく生成した内容で置き換えますか？'))return;
- $('manualOutput').value=append?[$('manualOutput').value.trim(),result].filter(Boolean).join('\n\n'):result;previewManual();$('manualStatus').textContent='チャパレを生成しました。数値・式を確認してコピーしてください。';
+ $('manualOutput').value=append?($('manualConditionMode').value==='separate'?mergeConditionOutputs($('manualOutput').value.trim(),result):[$('manualOutput').value.trim(),result].filter(Boolean).join('\n\n')):result;previewManual();$('manualStatus').textContent='チャパレを生成しました。数値・式を確認してコピーしてください。';
  }}catch(e){$('manualStatus').textContent=e.message;}}
 $('manualAddStage').addEventListener('click',()=>addManualStage({type:$('manualStageType').value}));
 $('manualGenerate').addEventListener('click',()=>emitManual(false));
