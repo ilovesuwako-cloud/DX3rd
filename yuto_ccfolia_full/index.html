@@ -992,17 +992,17 @@ function buildBasicPalette(sheet,options={}){
  const lines=[...(options.fear?['【登場判定】',':侵蝕+1']:['1d10 【登場判定】',':侵蝕+']),':HP-',''];
  const signed=n=>n>0?'+'+n:n<0?String(n):'';
  const mind=sheet.abilities['精神']||0,will=sheet.skills['意志']||0;
- lines.push(`${mind}DX${signed(will)} 【衝動判定】`);
+ lines.push(`({侵蝕B}+${mind})DX${signed(will)} 【衝動判定】`);
  if(options.fear&&!options.skipFear)lines.push(`${mind}DX${signed(will)} 【恐怖判定】`);
  lines.push('','＊＊＊能力値判定＊＊＊');
  for(const [ability,skills] of Object.entries(STAT_SKILLS)){
-  const value=sheet.abilities[ability]||0;lines.push(`＜${ability}＞`,`${value}DX 【${ability}】`);
+  const value=sheet.abilities[ability]||0;lines.push(`＜${ability}＞`,`({侵蝕B}+${value})DX 【${ability}】`);
   for(const skill of skills){
    const specialized=['運転','芸術','知識','情報'].includes(skill);
    const acquired=Object.entries(sheet.skills).filter(([label])=>label.split(/[:：]/)[0]===skill);
-   if(acquired.length)for(const [label,lv] of acquired)lines.push(`${value}DX${signed(lv)} 【${label}】`);
-   if(specialized&&options.skillBlank!==false){if(!acquired.some(([label])=>label===skill+':'||label===skill+'：'))lines.push(`${value}DX 【${skill}:】`);}
-   else if(!specialized&&!acquired.length)lines.push(`${value}DX 【${skill}】`);
+   if(acquired.length)for(const [label,lv] of acquired)lines.push(`({侵蝕B}+${value})DX${signed(lv)} 【${label}】`);
+   if(specialized&&options.skillBlank!==false){if(!acquired.some(([label])=>label===skill+':'||label===skill+'：'))lines.push(`({侵蝕B}+${value})DX 【${skill}:】`);}
+   else if(!specialized&&!acquired.length)lines.push(`({侵蝕B}+${value})DX 【${skill}】`);
   }
   lines.push('');
  }
