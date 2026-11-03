@@ -397,12 +397,16 @@ function readSheet(text){
  const abilities={},skills={};
  for(const m of text.matchAll(/^【(肉体|感覚|精神|社会)】：\s*(\d+)/gm))abilities[m[1]]=Number(m[2]);
  for(const m of text.matchAll(/^〈([^〉]+)〉：\s*(\d+)/gm))skills[m[1]]=Number(m[2]);
- const items=sectionOf(text,'アイテム');const weapons=(items.split('・武器')[1]||'').split('・防具')[0].split(/\r?\n/).filter(l=>l.includes(' / ')).map(l=>l.trim().split(/\s+\/(?=\s)/).map(value=>value.trim())).filter(r=>r[0]!=='名前').map(r=>({name:r[0],hit:r[5],attack:r[6]}));
+ const items=sectionOf(text,'アイテム');const weapons=(items.split('・武器')[1]||'').split('・防具')[0].split(/\r?\n/).filter(l=>l.includes(' / ')).map(l=>l.trim().split(/\s+\/(?=\s)/).map(value=>value.trim())).filter(r=>r[0]!=='名前').map(r=>({name:r[0],hit:r[5],attack:r[6],skill:r[4],note:decodeSheet(r.slice(9).join(' / '))}));
  const cyberArm=cyberArmWeapon(effects);
  if(cyberArm){const index=weapons.findIndex(w=>normalizedName(w.name)==='サイバーアーム');if(index>=0)weapons[index]={...weapons[index],...cyberArm};else weapons.push(cyberArm);}
  const itemRows=(items.split('・その他')[1]||'').split(/\r?\n/).filter(l=>l.includes(' / ')).map(l=>l.trim().split(/\s+\/(?=\s)/).map(v=>v.trim())).filter(r=>r[0]!=='名前');
- const inventory=itemRows.map(r=>({name:r[0],note:decodeSheet(r.slice(5).join(' / '))}));
- return {name:(text.match(/^キャラクター名：(.+)/m)||[])[1]||'キャラクター',effects,combos,abilities,skills,weapons,items:inventory,origin:/起源種/.test(sectionOf(text,'ロイス'))};
+ const armorRows=(items.split('・防具')[1]||'').split('・その他')[0].split(/\r?\n/).filter(l=>l.includes(' / ')).map(l=>l.trim().split(/\s+\/(?=\s)/).map(v=>v.trim())).filter(r=>r[0]!=='名前');
+ const inventory=[...armorRows.map(r=>({name:r[0],kind:'armor',note:decodeSheet(r.slice(5).join(' / '))})),...itemRows.map(r=>({name:r[0],kind:'item',note:decodeSheet(r.slice(5).join(' / '))}))];
+ const unarmedIndex=weapons.findIndex(w=>normalizedName(w.name)==='素手');
+ const itemWeapons=unarmedWeaponsFromItems(inventory,unarmedIndex>=0?weapons[unarmedIndex]:null);
+ if(itemWeapons.length){if(unarmedIndex>=0)weapons.splice(unarmedIndex,1);weapons.push(...itemWeapons);}
+ return {name:(text.match(/^キャラクター名：(.+)/m)||[])[1]||'キャラクター',effects,combos,abilities,skills,weapons,items:inventory,magicDice:Number((text.match(/^【魔術ダイス】\s*(\d+)/m)||[])[1])||undefined,origin:/起源種/.test(sectionOf(text,'ロイス'))};
 }
 function arithmetic(s){
  s=s.replace(/\s/g,'');if(!/^[-+]?\d+(?:[+*\/-]\d+)*$/.test(s))return null;
@@ -424,7 +428,8 @@ function substitutedAbility(text){
 function calculatedEffect(e,bonus,encroachment=bonus>0?100:0){
  const lv=e.lv+(/常時/.test(e.timing)?0:bonus)+(encroachment>=100?(e.itemLvBonus100||0):0);
  let text=e.effect.normalize('NFKC').replace(/\s+/g,' ')
-  .replace(/((?:C(?:値)?|ダイス|達成値|攻撃力|ガード(?:値)?|装甲(?:値)?)(?:を|が|に)?)\s*[ｰー−－]\s*/g,'$1-')
+  .replace(/((?:C(?:値)?|行動値|ダイス|達成値|攻撃力|ガード(?:値)?|装甲(?:値)?)(?:を|が|に)?)\s*[ｰー−－]\s*/g,'$1-')
+  .replace(/攻撃(?=\s*[+\-])/g,'攻撃力')
   .replace(/C値(?=\s*[+-])/g,'C')
   .replace(/クリティカル値を?|C値を/g,'C')
   .replace(/C\s*[ｰー−－]\s*/g,'C-')
@@ -439,13 +444,29 @@ function calculatedEffect(e,bonus,encroachment=bonus>0?100:0){
   .replace(/\bLv\b/gi,String(lv));
  text=text.replace(/[−－]/g,'-').replace(/\s*([+×÷])\s*/g,'$1')
   .replace(/(攻撃力|攻撃|ダイス|達成値|C値|C|ガード値|ガード|装甲値|装甲)(?:を|が|に)?\s*:?\s*(?=[+-])/g,(_,key)=>(key==='攻撃'?'攻撃力':key))
-  .replace(/(攻撃力|ダイス|達成値|ガード値|装甲値)(?:を|が|に)?\s*(\d+)\s*(?:点|個)?(?:増加|上昇|加算)/g,'$1+$2')
-  .replace(/(攻撃力|ダイス|達成値|ガード値|装甲値)(?:を|が|に)?\s*(\d+)\s*(?:点|個)?(?:減少|低下|減算)/g,'$1-$2');
+  .replace(/(攻撃力|ダイス|達成値|ガード値|装甲値)(?:を|が|に)?\s*(\d+)\s*(?:点|個)?(?:増加|上昇|加算|増やす)/g,'$1+$2')
+  .replace(/(攻撃力|ダイス|達成値|ガード値|装甲値)(?:を|が|に)?\s*(\d+)\s*(?:点|個)?(?:減少|低下|減算|減らす)/g,'$1-$2');
  text=text.replace(/[\[［]([\d\s+*×÷/－−-]+)[\]］]/g,(all,expr)=>{const n=arithmetic(expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/[－−]/g,'-'));return n===null?all:String(n);});
  text=text.replace(/((?:攻撃力|ガード値|ガード|装甲値|装甲)(?:\s*[:：])?)([+\-]?\d+(?:[+\-]\d+)+)/g,(all,label,expr)=>{const n=arithmetic(expr);return n===null?all:label+(expr.startsWith('+')&&n>=0?'+':'')+n;});
  const substitute=substitutedAbility(text);if(substitute&&!text.includes('【'+substitute+'】で判定'))text+='。【'+substitute+'】で判定';
  if(/^C(?=[:：]|$)/.test(normalizedName(e.name))&&/C-\d+/.test(text)&&!/下限/.test(text))text+='(下限7)';
  return {e,lv,text};
+}
+function unarmedWeaponsFromItems(items,existing=null){
+ const bases=[],bonuses=[];
+ for(const item of items){const text=String(item.note||'').normalize('NFKC');
+  const replacement=text.match(/素手(?:を|のデータを).*?攻撃力\s*[:：]\s*([+\-]?\d+).*?(?:変更|置き換)/);
+  const direct=text.match(/素手(?:の)?攻撃力\s*[:：]\s*([+\-]?\d+)/);
+  if(!replacement&&!direct)continue;
+  const guard=text.match(/ガード(?:値)?\s*[:：]\s*([+\-]?\d+)/);
+  const dice=text.match(/[〈<]白兵[〉>]\s*(?:判定)?ダイス\s*[:：]\s*([+\-]?\d+)/);
+  const record={name:displayEffectName(item.name),attack:Number((replacement||direct)[1]),guard:guard?Number(guard[1]):0,dice:dice?Number(dice[1]):0,condition:/セットアップ/.test(text)?'セットアップで《'+displayEffectName(item.name)+'》使用時':''};
+  if(replacement||!direct[1].match(/^[+\-]/))bases.push(record);else bonuses.push(record);
+ }
+ if(!bases.length&&existing&&/^-?\d+$/.test(existing.attack))bases.push({name:existing.name,attack:Number(existing.attack),guard:existing.guard||0,dice:0,condition:''});
+ if(!bases.length&&!bonuses.length)return [];
+ if(!bases.length)bases.push({name:'基礎値未指定',attack:null,guard:0,dice:0,condition:''});
+ return bases.map(base=>({name:'素手（'+[base.name,...bonuses.map(b=>b.name)].join('＋')+'）',hit:existing?.hit||'0',attack:base.attack===null?'':String(base.attack+bonuses.reduce((sum,b)=>sum+b.attack,0)),guard:base.guard+bonuses.reduce((sum,b)=>sum+b.guard,0),skillDiceBonus:{白兵:base.dice+bonuses.reduce((sum,b)=>sum+b.dice,0)},itemSource:[base.name,...bonuses.map(b=>b.name)].join('＋'),itemCondition:base.condition,attackBreakdown:base.attack===null?'基礎値の指定が必要':String(base.attack)+bonuses.map(b=>(b.attack>=0?'+':'')+b.attack).join('')}));
 }
 function cyberArmWeapon(effects){
  const effect=effects.find(e=>normalizedName(e.name)==='サイバーアーム');
@@ -470,10 +491,83 @@ function refreshFallingChild(sheet){
  if(sheet.effects.some(e=>normalizedName(e.name)===previous))select.value=previous;
 }
 function isMinorCreation(effect){
+ if(/マイナー/.test(effect.timing||'')&&/インフィニティウェポン|ハンドレッドガンズ|ヴィークルモーフィング/.test(normalizedName(effect.name)))return true;
  return /マイナー/.test(effect.timing||'')&&/(?:武器|ヴィークル|ビークル|素手|アーキタイプ)/.test(effect.effect||'')&&/(?:作成|生成|作り|作る|変更|取得|アーキタイプ)/.test(effect.effect||'');
 }
 function automaticCreationIndices(sheet){
  return sheet.effects.flatMap((effect,index)=>isMinorCreation(effect)&&!sheet.combos.some(combo=>combo.refs.some(ref=>normalizedName(ref)===normalizedName(effect.name)))?[index]:[]);
+}
+function applicablePriorEffects(sheet,current,stage){
+ const candidates=sheet.combos.filter(c=>c.name!==current.name&&conditionAllowed(c.condition,stage.at));
+ const minorNames=new Set(candidates.filter(c=>{const es=c.refs.map(ref=>sheet.effects.find(e=>normalizedName(e.name)===normalizedName(ref))).filter(Boolean);return comboTiming(es,c.timing||'')==='マイナー'&&es.some(e=>!isMinorCreation(e)&&/攻撃力[+\-]\d+/.test(calculatedEffect(e,stage.b,stage.at).text));}).map(c=>c.name));
+ const result=new Map();
+ for(const c of candidates){const es=c.refs.map(ref=>sheet.effects.find(e=>normalizedName(e.name)===normalizedName(ref))).filter(Boolean),timing=comboTiming(es,c.timing||'');if(!/マイナー|セットアップ|イニシアチブ/.test(timing))continue;
+  if(!String(current.note||'').includes(shortComboName(c.name))&&!es.some(e=>String(current.note||'').includes('《'+displayEffectName(e.name)+'》使用後'))&&!/全バフ込/.test(current.note||'')&&!(/セットアップコンボ/.test(current.note||'')&&timing==='セットアップ')&&!(minorNames.size===1&&minorNames.has(c.name)))continue;
+  for(const e of es)if(!current.refs.some(ref=>normalizedName(ref)===normalizedName(e.name)))result.set(normalizedName(e.name),e);
+ }
+ return [...result.values()];
+}
+function modifierTotalsFromText(text,sheet,skill,stat){
+ const out={attack:0,dice:0,achievement:0,unresolved:[]};
+ const known=Object.values(STAT_SKILLS).flat();
+ const clauses=[];
+ for(const sentence of String(text||'').normalize('NFKC').split(/[。\n]/).filter(Boolean)){
+  let scope='';for(const part of sentence.split(/[、；;]/)){const match=part.match(/[〈<][^〉>]+[〉>]/g);if(match)scope=match.join('');clauses.push(match?part:scope+part);}
+ }
+ for(let sentence of clauses){
+  const scopes=[...sentence.matchAll(/[〈<]([^〉>]+)[〉>]/g)].map(m=>m[1]);
+  if(scopes.length&&scopes.some(label=>known.includes(label.split(':')[0]))&&!scopes.some(label=>label===skill||label.replace(/:$/,'')===skill.split(':')[0]))continue;
+  const abilityScope=sentence.match(/【(肉体|感覚|精神|社会)】(?:の|による|を用いた)(?:判定|達成値)/);if(abilityScope&&abilityScope[1]!==stat)continue;
+  sentence=sentence.replace(/(ダイス(?:数)?|達成値|攻撃力)(?:を|に)?\s*(\d+)\s*(?:個|点)?(?:増加|上昇|加算|増やす)/g,'$1+$2').replace(/(ダイス(?:数)?|達成値|攻撃力)(?:を|に)?\s*(\d+)\s*(?:個|点)?(?:減少|低下|減算|減らす)/g,'$1-$2');
+  for(const match of sentence.matchAll(/(攻撃力|ダイス(?:数)?|達成値)(?:を|が|に)?\s*[:：]?\s*([+＋\-－−ｰー])\s*(\[[^\]]+\]|【[^】]+】|\d+(?:\s*[×*÷/]\s*\d+)*)/g)){
+   const key=match[1]==='攻撃力'?'attack':match[1].startsWith('ダイス')?'dice':'achievement';
+   let expr=match[3].replace(/【(肉体|感覚|精神|社会)】/g,(_,name)=>String(sheet.abilities[name]??'不明')).replace(/^\[|\]$/g,'').replace(/[×]/g,'*').replace(/÷/g,'/');
+   const value=arithmetic(expr);if(value===null){out.unresolved.push(match[0]);continue;}out[key]+=(/[+＋]/.test(match[2])?1:-1)*value;
+  }
+ }
+ return out;
+}
+function equipmentModifiers(sheet,combo,stage,weapon,stat){
+ const out={attack:0,dice:0,achievement:0,details:[],unresolved:[]};
+ const prior=applicablePriorEffects(sheet,combo,stage);const active=[combo.note||'',...prior.map(e=>e.effect)].join(' ');
+ const selectedSource=(sheet.weapons||[]).find(w=>weapon&&normalizedName(w.name)===normalizedName(weapon.name)&&!w.itemSource);
+ const sources=[...(sheet.items||[]),...(selectedSource?[{...selectedSource,kind:'weapon'}]:[])];
+ for(const item of sources){let text=String(item.note||'').normalize('NFKC');if(!/攻撃力|ダイス|達成値/.test(text))continue;
+  // Bare-hand base changes and their modifiers are already included in the selected weapon.
+  text=text.replace(/素手(?:を|のデータを).*?(?:変更|置き換える)/g,'').replace(/素手(?:の)?攻撃力\s*[:：]\s*[+\-]?\d+/g,'');
+  if(weapon?.itemSource?.includes(item.name))text=text.replace(/[〈<]白兵[〉>]\s*(?:判定)?ダイス\s*[:：]\s*[+\-]?\d+/g,'');
+  const matching=String(combo.note||'').includes(displayEffectName(item.name))&&/使用|適用|装備|込み|込/.test(combo.note||'');
+  if(item.kind==='weapon')text=text.replace(/この武器を使用した攻撃|この武器による攻撃/g,'攻撃');
+  const activated=/使用|宣言|発動|消費/.test(text);
+  for(let sentence of text.split(/[。\n]/).filter(Boolean)){
+   if(!/(?:攻撃力|ダイス(?:数)?|達成値)(?:を|が|に)?\s*[:：]?\s*(?:[+＋\-－−ｰー]|\d+.*?(?:増加|減少|上昇|低下|増やす|減らす|加算|減算))/.test(sentence))continue;
+   const min=sentence.match(/(\d+)%以上/),max=sentence.match(/(\d+)%未満/);if(min&&stage.at<Number(min[1])||max&&stage.at>=Number(max[1]))continue;
+   const notes=[];
+   if((activated||/使用|宣言|発動|消費|選択|対象の|対象が|場合|間、|HP|重ね|1回|暴走|BS中|バッドステータス/.test(sentence))&&!matching){
+    const statusOnly=/(?:暴走|BS中|バッドステータス)/.test(sentence)&&/暴走を受ける/.test(active)&&!/使用|宣言|消費|HP|選択/.test(sentence);
+    if(!statusOnly){out.unresolved.push('《'+item.name+'》：'+sentence.trim());continue;}
+   }
+   if(/この武器|この防具|装備/.test(sentence)&&item.kind==='weapon'&&!weapon)continue;
+   const found=modifierTotalsFromText(sentence,sheet,combo.skill||'',stat);
+   for(const key of ['attack','dice','achievement']){out[key]+=found[key];if(found[key])notes.push((key==='attack'?'攻撃力':key==='dice'?'ダイス':'達成値')+(found[key]>=0?'+':'')+found[key]);}
+   if(notes.length)out.details.push('《'+item.name+'》'+notes.join('・'));
+   out.unresolved.push(...found.unresolved.map(value=>'《'+item.name+'》：'+value));
+  }
+ }
+ return out;
+}
+function additionalRollModifiers(sheet,combo,stage,stat){
+ const out={dice:0,achievement:0,unresolved:[]};
+ const prior=applicablePriorEffects(sheet,combo,stage),active=prior.map(e=>e.effect).join(' ');
+ const sources=new Map([...sheet.effects.filter(e=>/常時/.test(e.timing)),...prior].filter(e=>!combo.refs.some(ref=>normalizedName(ref)===normalizedName(e.name))).map(e=>[normalizedName(e.name),e]));
+ for(const e of sources.values()){
+  const text=calculatedEffect(e,stage.b,stage.at).text;
+  if(/衝動判定|恐怖判定/.test(text))continue;
+  const min=text.match(/(\d+)%以上/);if(min&&stage.at<Number(min[1]))continue;
+  if(/暴走中|BS中/.test(text)&&!/暴走を受ける/.test(active)){out.unresolved.push('《'+displayEffectName(e.name)+'》の状態条件');continue;}
+  const mods=modifierTotalsFromText(text,sheet,combo.skill||'',stat);out.dice+=mods.dice;out.achievement+=mods.achievement;out.unresolved.push(...mods.unresolved.map(value=>'《'+displayEffectName(e.name)+'》：'+value));
+ }
+ return out;
 }
 function constantAttackBonus(sheet,combo,stage){
  let total=0;const notes=[],unresolved=[];
@@ -556,7 +650,7 @@ function fallbackEffectNeeded(effect,stage){
  if(!effect)return true;
  const part=calculatedEffect(effect,stage.b,stage.at),text=part.text;
  if(!stageEffectSummary([part])&&!/【(?:肉体|感覚|精神|社会)】で判定/.test(text))return true;
- if(/C(?:値)?-\d+/.test(text)&&!text.match(/C-\d+.*?下限\d+/))return true;
+ if(/C(?:値)?-\d+/.test(text)&&!text.match(/C-\d+.*?下限\d+/)&&effect.difficulty!=='自動成功'&&!/対象が次に/.test(text))return true;
  return false;
 }
 function removeRuby(name){return name.replace(/[｜|]([^《\n]+)《[^》]*》/g,'$1');}
@@ -609,9 +703,11 @@ function formulaDescription(text){
 }
 function defensiveEffectSummary(text){
  const results=[];
+ if(/ドッジは[〈<][^〉>]+[〉>]で行う/.test(text))results.push(text.match(/ドッジは[〈<][^〉>]+[〉>]で行う/)[0]);
+ if(/ヴィークル|ビークル/.test(text)&&/取得|搭乗/.test(text))results.push(text);
  const ability=text.match(/【(肉体|感覚|精神|社会)】で判定/);if(ability)results.push(ability[0]);
  if(/(?:HP)?ダメージ(?:を|が)\s*(?:0|ゼロ)(?:点)?に(?:する|なる|変更)/.test(text)||/ダメージを無効(?:化)?(?:する)?/.test(text))results.push('ダメージを0にする');
- if(/判定(?:を|が)(?:自動的に|強制的に)?失敗(?:にする|する|させる)/.test(text))results.push('判定を失敗にする');
+ if(/判定(?:を|が|は)(?:自動的に|強制的に)?失敗(?:にする|となる|する|させる)/.test(text))results.push('判定を失敗にする');
  for(const m of text.matchAll(/ガード(?:値)?(?:を)?\s*([+＋\-－−ｰー])\s*(\d+)(D(?:10)?)?/g))results.push(`ガード${/[+＋]/.test(m[1])?'+':'-'}${m[2]}${m[3]?'D10':''}`);
  for(const m of text.matchAll(/装甲(?:値)?(?:を)?\s*([+＋\-－−ｰー])\s*(\d+)(D(?:10)?)?/g))results.push(`装甲${/[+＋]/.test(m[1])?'+':'-'}${m[2]}${m[3]?'D10':''}`);
  const reduction=text.match(/(?:受ける|受ける予定の|適用される)?ダメージを\s*[-－−ｰー]\s*(\d+)(D(?:10)?)?/);
@@ -634,8 +730,12 @@ function stageEffectSummary(parts){
  let combatMove=false;
  let weaponAttack=false;
  for(const p of parts){
-  if(/エフェクト.*?Lv(?:を)?[+＋]\d+/i.test(p.e.effect)){const match=p.e.effect.match(/Lv(?:を)?[+＋](\d+)/i);results.push(`選択したエフェクトのLv+${match[1]}`);}
+  if(/エフェクト(?:の|ひとつの|一つの|1つの)Lv(?:を)?[+＋]\d+/i.test(p.e.effect)){const match=p.e.effect.match(/Lv(?:を)?[+＋](\d+)/i);results.push(`選択したエフェクトのLv+${match[1]}`);}
   results.push(...defensiveEffectSummary(p.text));
+  if(/暴走を受ける/.test(p.text))results.push('暴走を受ける');
+  for(const duration of ['ラウンド中','シーン中','メインプロセス中'])if(p.text.includes(duration))results.push(duration);
+  if(/1判定に1回/.test(p.text))results.push('1判定1回');
+  if(/(?:同じ判定|同一判定|1回の判定).*?(?:追加|複数回)/.test(p.text))results.push(p.text.split('。').find(t=>/(?:同じ判定|同一判定|1回の判定).*?(?:追加|複数回)/.test(t)));
   const selectedWeapon=p.text.match(/攻撃力\+\[選択した武器の攻撃力\]/);
   if(selectedWeapon)results.push('攻撃力+(選択した武器の攻撃力)');
   const reducedDice=p.text.match(/ダイス-(?:\[)?(\d+)以下の数(?:\])?個/);
@@ -705,6 +805,23 @@ function completeComboData(sheet,combo){
  if(missing(result.condition)){const limits=effects.flatMap(e=>[...String(e.limit||'').normalize('NFKC').matchAll(/(\d+)%/g)].map(m=>Number(m[1])));if(limits.length)result.condition=Math.max(...limits)+'%以上';}
  return result;
 }
+function priorAttackBonuses(sheet,current,stage){
+ let total=0;const names=new Set(),notes=[];
+ const minorNames=new Set(sheet.combos.filter(c=>conditionAllowed(c.condition,stage.at)&&c.name!==current.name).filter(c=>{const es=c.refs.map(ref=>sheet.effects.find(e=>normalizedName(e.name)===normalizedName(ref))).filter(Boolean);return comboTiming(es,c.timing||'')==='マイナー'&&es.some(e=>!isMinorCreation(e)&&/攻撃力[+\-]\d+/.test(calculatedEffect(e,stage.b,stage.at).text));}).map(c=>c.name));
+ for(const combo of sheet.combos){
+  if(combo.name===current.name||!conditionAllowed(combo.condition,stage.at))continue;
+  const refs=combo.refs.map(ref=>sheet.effects.find(e=>normalizedName(e.name)===normalizedName(ref))).filter(Boolean);
+  if(!/マイナー|セットアップ|イニシアチブ/.test(comboTiming(refs,combo.timing||'')))continue;
+  const referenced=(minorNames.size===1&&minorNames.has(combo.name)&&comboTiming(refs,combo.timing||'')==='マイナー')||String(current.note||'').includes(shortComboName(combo.name))||refs.some(e=>String(current.note||'').includes('《'+displayEffectName(e.name)+'》使用後'))||/全バフ込/.test(current.note||'')||/セットアップコンボ/.test(current.note||'')&&/セットアップ/.test(comboTiming(refs,combo.timing||''));
+  if(!referenced)continue;
+  for(const effect of refs){const key=normalizedName(effect.name);if(names.has(key)||/常時/.test(effect.timing)||isMinorCreation(effect)||current.refs.some(ref=>normalizedName(ref)===key))continue;
+   const text=calculatedEffect(effect,stage.b,stage.at).text;
+   const match=text.match(/攻撃力([+\-]\d+)(?![\d×*])/);if(!match)continue;
+   names.add(key);total+=Number(match[1]);notes.push('《'+displayEffectName(effect.name)+'》'+match[1]);
+  }
+ }
+ return {total,notes};
+}
 function attackTotals(expression){
  const text=String(expression??'').normalize('NFKC').replace(/\s/g,'').replace(/D(?!\d)/gi,'D10');
  if(!/^[+\-]?\d+(?:D10)?(?:[+\-]\d+(?:D10)?)*$/i.test(text))return null;
@@ -722,8 +839,9 @@ function minorCreatedWeapons(sheet,stage){
   for(const e of effects)for(const match of e.effect.matchAll(/《([^》]+)》のLv[+＋](\d+)/g)){const target=effects.find(x=>normalizedName(x.name)===normalizedName(match[1]));if(target)levels.set(target,(levels.get(target)||0)+Number(match[2]));}
   const parts=effects.map(e=>calculatedEffect({...e,lv:e.lv+(levels.get(e)||0)},stage.b,stage.at));
   for(const part of parts){
-   if(!/(?:武器|ヴィークル|ビークル|素手|アーキタイプ)/.test(part.text)||!/(?:作成|生成|作り|作る|変更|取得|アーキタイプ)/.test(part.text))continue;
-   const match=part.text.match(/攻撃力\s*[:：]?\s*([+\-]?\d+)(?![\d×*+])/);
+   if(!isMinorCreation(part.e))continue;
+   let match=part.text.match(/攻撃力\s*[:：]?\s*([+\-]?\d+)(?![\d×*+])/);
+   if(!match){const rows=String(combo.note||'').normalize('NFKC').split(/\r?\n/).filter(line=>/攻撃力/.test(line)&&conditionAllowed(line,stage.at));rows.sort((a,b)=>Number(b.match(/(\d+)%以上/)?.[1]||0)-Number(a.match(/(\d+)%以上/)?.[1]||0));match=rows[0]?.match(/攻撃力\s*[:：]?\s*([+\-]?\d+)/);}
    if(!match)continue;
    const key=normalizedName(part.e.name);if(!candidates.some(c=>c.key===key))candidates.push({key,name:displayEffectName(part.e.name),combo:shortComboName(combo.name),attack:Number(match[1])});
   }
@@ -735,6 +853,7 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
  const origin=rule==='origin'||(rule==='auto'&&sheet.origin);const stages=origin?[{label:'80%未満',at:0,b:0},{label:'80%以上',at:80,b:1},{label:'100%以上',at:100,b:2}]:[{label:'100%未満',at:0,b:0},{label:'100%以上',at:100,b:1}];
  if(!origin&&sheet.combos.some(c=>/80[%％]以上/.test(c.condition))){stages[0].label='80%未満';stages.splice(1,0,{label:'80%以上',at:80,b:0});}
  const warnings=new Set(['試作：自然文の効果を完全には解釈できません。生成式と原文を照合し、未反映の補正は手入力してください。']),issueGroups=new Map(),lines=[],entries=[],seen=new Set(),groups=new Map();
+ if(weapon?.itemCondition)warnings.add('武器照合の前提：'+weapon.itemCondition+'（素手攻撃力 '+weapon.attackBreakdown+'='+weapon.attack+'）。');
  const fallbackContexts=new Map();
  const addIssue=(combo,stage,effect,item,original,reason,fix)=>{
   const fallback=fallbackContexts.get(combo+'\n'+stage);
@@ -750,6 +869,8 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
  };
  for(const combo of sheet.combos){for(const stage of stages){
   if(!conditionAllowed(combo.condition,stage.at))continue;
+  const minimum=c=>Number(String(c.condition||'').match(/(\d+)[%％]以上/)?.[1]||0);
+  if(sheet.combos.some(other=>other!==combo&&other.name===combo.name&&JSON.stringify(other.refs)===JSON.stringify(combo.refs)&&conditionAllowed(other.condition,stage.at)&&minimum(other)>minimum(combo)))continue;
   const key=JSON.stringify([combo.name,combo.refs,combo.skill,combo.target,combo.range,combo.cost,stage.label]);if(seen.has(key))continue;seen.add(key);
   const needsFallback=combo.refs.some(ref=>fallbackEffectNeeded(sheet.effects.find(e=>normalizedName(e.name)===normalizedName(ref)),stage));
   const fallbackHit=needsFallback?parseComboHit(combo.hit):null;
@@ -790,11 +911,11 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
   const skill=combo.skill.replace(/[〈〉]/g,'');const base=skill.split(/[:：]/)[0];const stat=Object.keys(STAT_SKILLS).find(k=>STAT_SKILLS[k].includes(base));
   let outputAttack=null;
   const sourceHit=parseComboHit(combo.hit);
-  if(stat||fallbackHit||sourceHit){
+  if(sourceHit||fallbackHit||stat&&effects.some(e=>e.difficulty==='対決')){
    const importedBase=comboBaseDice(combo.hit);
    if(importedBase===null)warnings.add(`「${combo.name}」：コンボ欄から基礎ダイスを取得できないため、${stat}の能力値を使用しています。`);
    const substitute=parts.map(p=>substitutedAbility(p.text)).find(Boolean);
-   let dice=importedBase===null?(sheet.abilities[substitute||stat]||0):importedBase,crit=10,attack=0,damageDice=0;let incomplete=effects.length!==combo.refs.length;
+   let dice=sheet.abilities[substitute||stat]??importedBase??0,crit=10,attack=0,damageDice=0;let incomplete=effects.length!==combo.refs.length;
    let weaponAttack=false;
    const achievementTerms=[],attackTerms=[];
    for(const p of parts){const t=p.text;
@@ -802,17 +923,31 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
     if(achievement)achievementTerms.push(/重ねて使用可能/.test(p.e.effect)?`(${displayEffectName(p.e.name)}×${achievement[1]})`:achievement[1]);
     const variableAttack=t.match(/攻撃力[:：]?\s*[+＋]\s*\[([^\]]*選択した武器の数[^\]]*)\]/);
     if(variableAttack)attackTerms.push(`(${variableAttack[1]})`);
-    for(const m of t.matchAll(/ダイス([+＋\-－−])(\d+)(?:個)?/g))dice+=(/[+＋]/.test(m[1])?1:-1)*Number(m[2]);
+    for(const m of (/対象が次に/.test(t)?[]:t.matchAll(/ダイス([+＋\-－−])(\d+)(?:個)?/g)))dice+=(/[+＋]/.test(m[1])?1:-1)*Number(m[2]);
     const c=t.match(/C\s*[-－−](\d+).*?下限(\d+)/);if(c)crit=Math.max(Number(c[2]),crit-Number(c[1]));
     const a=t.match(/攻撃力[+＋](\d+)/);if(a&&!/武器|アーキタイプ|シーン中|ラウンド中/.test(t))attack+=Number(a[1]);
     if(/攻撃力[+＋]/.test(t)&&!a&&!variableAttack&&!/使用している武器攻撃力/.test(t))addIssue(combo.name,stage.label,displayEffectName(p.e.name),'攻撃力補正',p.e.effect,'攻撃力補正を読み取れないため、0として式を出力しました。','数値または対応するLv式（例：攻撃力+[Lv×3]）を確認してください。可変式は手入力側の攻撃力欄で指定してください。');
-    if(/C(?:値)?\s*[-－−]\d+/.test(t)&&!c)addIssue(combo.name,stage.label,displayEffectName(p.e.name),'C値の下限',p.e.effect,'C値の下限が不明なため、補正を反映できていません（基準C値10）。','正しい下限を確認し、効果文に下限を追記してください。手入力の場合は各条件のC値欄に最終C値を入力してください。');
+    if(/C(?:値)?\s*[-－−]\d+/.test(t)&&!c&&p.e.difficulty!=='自動成功'&&!/対象が次に/.test(t))addIssue(combo.name,stage.label,displayEffectName(p.e.name),'C値の下限',p.e.effect,'C値の下限が不明なため、補正を反映できていません（基準C値10）。','正しい下限を確認し、効果文に下限を追記してください。手入力の場合は各条件のC値欄に最終C値を入力してください。');
     for(const m of t.matchAll(/ダメージ[+＋](\d+)D/gi))damageDice+=Number(m[1]);
     if(/使用している武器攻撃力|暴走中|対象|判定|ダイス|攻撃力|ダメージ|C\s*[-－−]|シナリオ/.test(t)===false){incomplete=true;}
     if(/(?:攻撃力|ダメージ)[+＋]\s*[\[［]?使用している武器攻撃力/.test(t))weaponAttack=true;
    }
+   const equipment=equipmentModifiers(sheet,combo,stage,weapon,substitute||stat);
+   const additional=additionalRollModifiers(sheet,combo,stage,substitute||stat);
+   dice+=(weapon?.skillDiceBonus?.[skill]||0)+equipment.dice+additional.dice;
+   const itemDetails=equipment.details.length?'（アイテム：'+equipment.details.join('／')+'）':'';
+   if(equipment.unresolved.length)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：アイテム補正の条件または数値を確定できず未加算：${equipment.unresolved.join('／')}`);
+   if(additional.unresolved.length)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：判定補正の照合未完了：${additional.unresolved.join('／')}`);
+   achievementTerms.push(...[equipment.achievement,additional.achievement].filter(Boolean).map(String));
    const hit=weapon&&/^-?\d+$/.test(weapon.hit)?Number(weapon.hit):0;
-   if((combo.noteHit||!stat)&&sourceHit)rolls.push(`(${hitDiceWithEncroachment(sourceHit.dice,includeEncroachment)})DX${sourceHit.critical}${sourceHit.fixed?sourceHit.fixed>0?'+'+sourceHit.fixed:String(sourceHit.fixed):''} 【${shortComboName(combo.name)}／${stage.label}／命中判定】`);
+   if(sourceHit&&stat&&!equipment.unresolved.length&&!additional.unresolved.length){
+    const registeredDice=arithmetic(sourceHit.dice.replace(/\{?侵蝕B\}?/g,'0'));
+    if(registeredDice!==null&&registeredDice!==dice)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：ダイス数が相違しています。コンボ欄（侵蝕B除外）：${registeredDice}／能力値・エフェクト・アイテム計算：${dice}${itemDetails}。出力はコンボ欄を優先しています。`);
+    const knownAchievement=achievementTerms.every(term=>arithmetic(term)!==null);
+    const achievement=(sheet.skills[skill]||0)+hit+achievementTerms.reduce((sum,term)=>sum+(arithmetic(term)||0),0);
+    if(knownAchievement&&sourceHit.fixed!==achievement)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：達成値が相違しています。コンボ欄：${sourceHit.fixed}／技能・エフェクト・アイテム計算：${achievement}${itemDetails}。出力はコンボ欄を優先しています。`);
+   }
+   if(sourceHit)rolls.push(`(${hitDiceWithEncroachment(sourceHit.dice,includeEncroachment)})DX${sourceHit.critical}${sourceHit.fixed?sourceHit.fixed>0?'+'+sourceHit.fixed:String(sourceHit.fixed):''} 【${shortComboName(combo.name)}／${stage.label}／命中判定】`);
    else if(fallbackHit)rolls.push(`(${hitDiceWithEncroachment(fallbackHit.dice,includeEncroachment)})DX${fallbackHit.critical}${fallbackHit.fixed>=0?'+':''}${fallbackHit.fixed} 【${shortComboName(combo.name)}／${stage.label}／命中判定】`);
    else rolls.push(`(${hitDiceWithEncroachment(dice,includeEncroachment)})DX${crit}${(sheet.skills[skill]||0)+hit>=0?'+':''}${(sheet.skills[skill]||0)+hit}${achievementTerms.map(t=>'+'+t).join('')} 【${shortComboName(combo.name)}／${stage.label}／命中判定】`);
    if(/白兵|射撃|RC|運転/.test(base)||sourceHit&&parseComboAttack(combo.attack)!==null){
@@ -827,18 +962,19 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
      const prior=selected||(!weapon&&created.length===1?created[0]:null);
      const comparisonWeapon=prior?prior.attack:wa;
      const constants=constantAttackBonus(sheet,combo,stage);
-     const calculatedAttack=attack+(comparisonWeapon||0)+constants.total;
+     const priorBonus=priorAttackBonuses(sheet,combo,stage);
+     const calculatedAttack=attack+(comparisonWeapon||0)+constants.total+priorBonus.total+equipment.attack;
      if(constants.unresolved.length)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：常時エフェクト${constants.unresolved.map(n=>'《'+n+'》').join('・')}の条件を確定できないため、攻撃力の照合計算には未加算です。`);
      const source=attackTotals(registeredAttack);
      if(!weapon&&created.length>1)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：マイナーで作成する武器・ヴィークルが複数あります（${created.map(c=>'◤'+c.combo+'◢《'+c.name+'》攻撃力'+c.attack).join('／')}）。使用武器を選択してください。攻撃力はコンボ欄の${registeredAttack}で出力しています。`);
-     else if(attackTerms.length||weaponAttack||comparisonWeapon===null&&/白兵|射撃|運転/.test(base))warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：攻撃力はコンボ欄の${registeredAttack}を使用。武器未指定または可変効果のため、エフェクト計算との照合を完了できません。`);
-     else if(source&&source.fixed!==calculatedAttack)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：攻撃力が相違しています。コンボ欄：${source.fixed}／エフェクト計算：${calculatedAttack}${constants.notes.length?'（常時：'+constants.notes.join('／')+'）':''}${prior?'（マイナー◤'+prior.combo+'◢で作成する《'+prior.name+'》の攻撃力'+prior.attack+'を加算）':''}。出力にはコンボ欄の${registeredAttack}を使用しています。`);
+     else if(equipment.unresolved.length||attackTerms.length||weaponAttack||comparisonWeapon===null&&/白兵|射撃|運転/.test(base))warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：攻撃力はコンボ欄の${registeredAttack}を使用。武器未指定または可変効果のため、エフェクト計算との照合を完了できません。`);
+     else if(source&&source.fixed!==calculatedAttack)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：攻撃力が相違しています。コンボ欄：${source.fixed}／エフェクト計算：${calculatedAttack}${itemDetails}${weapon?.itemSource?'（一般欄：《'+weapon.itemSource+'》の素手攻撃力'+wa+'）':''}${priorBonus.notes.length?'（先行効果：'+priorBonus.notes.join('／')+'）':''}${constants.notes.length?'（常時：'+constants.notes.join('／')+'）':''}${prior?'（マイナー◤'+prior.combo+'◢で作成する《'+prior.name+'》の攻撃力'+prior.attack+'を加算）':''}。出力にはコンボ欄の${registeredAttack}を使用しています。`);
     }else{
      const created=timings==='メジャー'?minorCreatedWeapons(sheet,stage):[];
      const prior=weapon?created.find(c=>normalizedName(weapon.name||'').includes(c.key)):created.length===1?created[0]:null;
      const computedWeapon=prior?prior.attack:wa;
      const constants=constantAttackBonus(sheet,combo,stage);
-     const computedAttack=attack+constants.total;
+     const computedAttack=attack+constants.total+priorAttackBonuses(sheet,combo,stage).total+equipment.attack;
      const computedTerm=weaponAttack?`(${computedAttack}+使用している武器攻撃力)`:String(computedAttack);
      outputAttack=!weaponAttack&&computedWeapon!==null?String(computedAttack+computedWeapon):computedTerm;
      if(!weapon&&created.length>1)warnings.add(`「${combo.name}／${stage.label}」：作成武器・ヴィークルが複数あるため、使用武器を選択してください。`);
@@ -893,7 +1029,7 @@ function syncWeaponFields(){
  const weapon=index===''?null:sheet.weapons[Number(index)];
  $('weaponHit').value=weapon?.hit??'';$('weaponAttack').value=weapon?.attack??'';
  $('weaponHit').readOnly=Boolean(weapon?.effectLinked);$('weaponAttack').readOnly=Boolean(weapon?.effectLinked);
- $('weaponSelectionStatus').textContent=weapon?.effectLinked?`選択中：サイバーアーム（エフェクトLv${weapon.effectLevel}と連動）。命中修正：${weapon.hit||'読取不可'}／攻撃力：${weapon.attack||'読取不可'}。常時のため侵蝕率によるLv上昇は加えません。Lv変更後は再生成してください。`:weapon?`選択中：${weapon.name}。下の命中修正・攻撃力を確認してください。`:'武器を選択するか、命中修正・攻撃力を直接入力してください。';
+ $('weaponSelectionStatus').textContent=weapon?.effectLinked?`選択中：サイバーアーム（エフェクトLv${weapon.effectLevel}と連動）。命中修正：${weapon.hit||'読取不可'}／攻撃力：${weapon.attack||'読取不可'}。常時のため侵蝕率によるLv上昇は加えません。Lv変更後は再生成してください。`:weapon?`選択中：${weapon.name}。${weapon.itemCondition?weapon.itemCondition+'。':''}${weapon.attackBreakdown?'攻撃力：'+weapon.attackBreakdown+'='+weapon.attack+'。':''}下の命中修正・攻撃力を確認してください。`:'武器を選択するか、命中修正・攻撃力を直接入力してください。';
 }
 function scanTextWeapons(){
  const sheet=readSheet($('loadedSheetText').value),select=$('weaponChoice');
@@ -907,7 +1043,7 @@ function selectedWeapon(sheet,index,hit,attack){
  const base=index===''?null:sheet.weapons[Number(index)];
  if(base?.effectLinked)return base;
  if(!base&&!hit.trim()&&!attack.trim())return null;
- return {name:base?.name||'手入力武器',hit:hit.normalize('NFKC').trim().replace(/^\+/,''),attack:attack.normalize('NFKC').trim().replace(/^\+/,'')};
+ return {...(base||{}),name:base?.name||'手入力武器',hit:hit.normalize('NFKC').trim().replace(/^\+/,''),attack:attack.normalize('NFKC').trim().replace(/^\+/,'')};
 }
 function setStatus(message,kind){$('textWarnings').textContent=message;$('textWarnings').style.color=kind==='err'?'var(--warn)':'var(--text-dim)';}
 function decodeTextFile(buffer){
@@ -1050,7 +1186,7 @@ function sheetJsonToText(data){
  const v=k=>data[k]==null?'':String(data[k]);
  const count=k=>Math.min(1000,Math.max(0,Number(data[k])||0));
  const row=values=>values.map(s=>String(s??'').replace(/\r\n?|\n/g,'&lt;br&gt;')).join(' / ');
- const lines=['キャラクター名：'+v('characterName'),tokenMetadataText(tokenMetadataFromJson(data)),'■能力値と技能■'];
+ const lines=['キャラクター名：'+v('characterName'),tokenMetadataText(tokenMetadataFromJson(data)),'【魔術ダイス】 '+(v('magicTotal')||''),'■能力値と技能■'];
  for(const [name,key] of [['肉体','Body'],['感覚','Sense'],['精神','Mind'],['社会','Social']])lines.push(`【${name}】：${v('sttTotal'+key)||'0'}`);
  for(const [name,key] of [['白兵','Melee'],['回避','Dodge'],['射撃','Ranged'],['知覚','Percept'],['RC','RC'],['意志','Will'],['交渉','Negotiate'],['調達','Procure']])lines.push(`〈${name}〉：${v('skillTotal'+key)||v('skill'+key)||'0'}`);
  for(const [base,key] of [['運転','Ride'],['芸術','Art'],['知識','Know'],['情報','Info']])for(let i=1;i<=count('skill'+key+'Num');i++){
@@ -1069,7 +1205,9 @@ function sheetJsonToText(data){
  }
  lines.push('■アイテム■','・武器',row(['名前','常備化','経験点','種別','技能','命中','攻撃力','ガード値','射程','解説']));
  for(let i=1;i<=count('weaponNum');i++){const p='weapon'+i;if(v(p+'Name'))lines.push(row(['Name','Stock','Exp','Type','Skill','Acc','Atk','Guard','Range','Note'].map(k=>v(p+k))));}
- lines.push('・防具','・その他',row(['名前','常備化','経験点','種別','技能','解説']));
+ lines.push('・防具',row(['名前','常備化','経験点','種別','技能','解説']));
+ for(let i=1;i<=count('armorNum');i++){const p='armor'+i;if(v(p+'Name'))lines.push(row([v(p+'Name'),v(p+'Stock'),v(p+'Exp'),v(p+'Type'),'',v(p+'Note')]));}
+ lines.push('・その他',row(['名前','常備化','経験点','種別','技能','解説']));
  for(let i=1;i<=count('itemNum');i++){const p='item'+i;if(v(p+'Name'))lines.push(row(['Name','Stock','Exp','Type','Skill','Note'].map(k=>v(p+k))));}
  lines.push('■ロイス■');for(let i=1;i<=Math.max(7,count('loisNum'));i++)lines.push(row(['Name','Relation','Note'].map(k=>v('lois'+i+k))));
  return lines.join('\n');
@@ -1136,8 +1274,10 @@ function buildBasicPalette(sheet,options={}){
  const lines=[...(options.fear?['【登場判定】',':侵蝕+1']:['1d10 【登場判定】',':侵蝕+']),':HP-',''];
  const signed=n=>n>0?'+'+n:n<0?String(n):'';
  const mind=sheet.abilities['精神']||0,will=sheet.skills['意志']||0;
- lines.push(`({侵蝕B}+${mind})DX${signed(will)} 【衝動判定】`);
+ const impulseBonus=(sheet.effects||[]).filter(e=>/常時/.test(e.timing)&&/衝動判定/.test(e.effect)).reduce((sum,e)=>{const match=calculatedEffect(e,0).text.match(/衝動判定のダイス[+＋](\d+)/);return sum+(match?Number(match[1]):0);},0);
+ lines.push(`({侵蝕B}+${mind+impulseBonus})DX${signed(will)} 【衝動判定】`);
  if(options.fear&&!options.skipFear)lines.push(`${mind}DX${signed(will)} 【恐怖判定】`);
+ if(options.fear&&!options.skipMagic)lines.push(`${sheet.magicDice||Math.max(1,Math.ceil((mind+will)/2))}D10 【魔術ロール／0の振り足し・魔術暴走は手動確認】`);
  lines.push('','＊＊＊能力値判定＊＊＊');
  for(const [ability,skills] of Object.entries(STAT_SKILLS)){
   const value=sheet.abilities[ability]||0;lines.push(`＜${ability}＞`,`({侵蝕B}+${value})DX 【${ability}】`);
@@ -1203,7 +1343,7 @@ function mergeSourceCharacterToken(source,sheet,commands,options={}){
   }).join('\n');
   for(const key of ['DB','CB','AB','AtkB'])if(!extra.split('\n').some(line=>!line.startsWith('//')&&line.includes('{'+key+'}')))extra=extra.split('\n').filter(line=>!line.startsWith('//'+key+'=')).join('\n');
  }
- const basic=options.basic===false?'':buildBasicPalette(sheet,{...options,skipFear:/恐怖判定/.test(extra)});
+ const basic=options.basic===false?'':buildBasicPalette(sheet,{...options,skipFear:/恐怖判定/.test(extra),skipMagic:/魔術ロール/.test(extra)});
  data.status=Array.isArray(data.status)?data.status:[];
  if(!data.status.some(s=>s.label==='侵蝕B'))data.status.push({label:'侵蝕B',value:0,max:0});
  data.commands=[basic,extra.trim(),commands?'＊＊＊エフェクト/コンボ＊＊＊\n'+commands:'',options.manualCommands||''].filter(Boolean).join('\n\n');
