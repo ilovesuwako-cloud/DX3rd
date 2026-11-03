@@ -395,12 +395,28 @@ function arithmetic(s){
  s=s.replace(/\s/g,'');if(!/^[-+]?\d+(?:[+*\/-]\d+)*$/.test(s))return null;
  const terms=s.match(/[+-]?[^+-]+/g);let sum=0;for(const term of terms){const xs=term.match(/[*/]|[+-]?\d+/g);let n=Number(xs[0]);for(let i=1;i<xs.length;i+=2)n=xs[i]==='*'?n*Number(xs[i+1]):n/Number(xs[i+1]);sum+=n;}return Number.isFinite(sum)?sum:null;
 }
+function substitutedAbility(text){
+ const value=String(text||'').normalize('NFKC');
+ const ability='(?:【|\\[|〈|<)?(肉体|感覚|精神|社会)(?:】|\\]|〉|>)?';
+ const patterns=[
+  ability+'\\s*(?:で|によって|による)\\s*(?:の)?判定',
+  '判定(?:を|は)\\s*'+ability+'\\s*(?:で|によって|による)(?:行|おこな|代用|判定)',
+  '判定(?:に使用する|で使用する|に用いる|で用いる|の)(?:能力値|基本能力値)(?:を|は)\\s*'+ability+'\\s*(?:に|で)',
+  '判定(?:を|は)\\s*'+ability+'\\s*(?:に|で)(?:置き換|置換|変更|代用)',
+  '(?:使用する|用いる)能力値(?:を|は)\\s*'+ability+'\\s*(?:に変更|に置き換|で代用)'
+ ];
+ for(const pattern of patterns){const match=value.match(new RegExp(pattern));if(match)return match[1];}
+ return null;
+}
 function calculatedEffect(e,bonus,encroachment=bonus>0?100:0){
  const lv=e.lv+(/常時/.test(e.timing)?0:bonus)+(encroachment>=100?(e.itemLvBonus100||0):0);
  let text=e.effect.normalize('NFKC').replace(/\s+/g,' ')
   .replace(/((?:C(?:値)?|ダイス|達成値|攻撃力|ガード(?:値)?|装甲(?:値)?)(?:を|が|に)?)\s*[ｰー−－]\s*/g,'$1-')
   .replace(/C値(?=\s*[+-])/g,'C')
   .replace(/クリティカル値を?|C値を/g,'C')
+  .replace(/C\s*[ｰー−－]\s*/g,'C-')
+  .replace(/判定を\s*【(肉体|感覚|精神|社会)】\s*で(?:行える|行う|行なう|行なえる)/g,'【$1】で判定')
+  .replace(/1R(\d+)回/gi,'ラウンド$1回')
   .replace(/ダイスを\s*/g,'ダイス').replace(/下限値/g,'下限')
   .replace(/ダメージ(?:ロール)?(?:に|を)\s*(?=[+＋])/g,'ダメージ')
   .replace(/(?:ガード(?:値)?|装甲(?:値)?)(?:を|が|に)?\s*(?:[:：]\s*)?(?:[+＋]|プラス|増加\s*[:：]?\s*)(?=\s*[\[［(\d])/g,m=>(m.startsWith('ガード')?'ガード':'装甲')+'+')
@@ -413,6 +429,8 @@ function calculatedEffect(e,bonus,encroachment=bonus>0?100:0){
   .replace(/(攻撃力|ダイス|達成値|ガード値|装甲値)(?:を|が|に)?\s*(\d+)\s*(?:点|個)?(?:減少|低下|減算)/g,'$1-$2');
  text=text.replace(/[\[［]([\d\s+*×÷/－−-]+)[\]］]/g,(all,expr)=>{const n=arithmetic(expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/[－−]/g,'-'));return n===null?all:String(n);});
  text=text.replace(/((?:攻撃力|ガード値|ガード|装甲値|装甲)(?:\s*[:：])?)([+\-]?\d+(?:[+\-]\d+)+)/g,(all,label,expr)=>{const n=arithmetic(expr);return n===null?all:label+(expr.startsWith('+')&&n>=0?'+':'')+n;});
+ const substitute=substitutedAbility(text);if(substitute&&!text.includes('【'+substitute+'】で判定'))text+='。【'+substitute+'】で判定';
+ if(/^C(?=[:：]|$)/.test(normalizedName(e.name))&&/C-\d+/.test(text)&&!/下限/.test(text))text+='(下限7)';
  return {e,lv,text};
 }
 function cyberArmWeapon(effects){
@@ -554,6 +572,7 @@ function formulaDescription(text){
 }
 function defensiveEffectSummary(text){
  const results=[];
+ const ability=text.match(/【(肉体|感覚|精神|社会)】で判定/);if(ability)results.push(ability[0]);
  if(/(?:HP)?ダメージ(?:を|が)\s*(?:0|ゼロ)(?:点)?に(?:する|なる|変更)/.test(text)||/ダメージを無効(?:化)?(?:する)?/.test(text))results.push('ダメージを0にする');
  if(/判定(?:を|が)(?:自動的に|強制的に)?失敗(?:にする|する|させる)/.test(text))results.push('判定を失敗にする');
  for(const m of text.matchAll(/ガード(?:値)?(?:を)?\s*([+＋\-－−ｰー])\s*(\d+)(D(?:10)?)?/g))results.push(`ガード${/[+＋]/.test(m[1])?'+':'-'}${m[2]}${m[3]?'D10':''}`);
@@ -683,7 +702,8 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
   if(stat||fallbackHit){
    const importedBase=comboBaseDice(combo.hit);
    if(importedBase===null)warnings.add(`「${combo.name}」：コンボ欄から基礎ダイスを取得できないため、${stat}の能力値を使用しています。`);
-   let dice=importedBase===null?(sheet.abilities[stat]||0):importedBase,crit=10,attack=0,damageDice=0;let incomplete=effects.length!==combo.refs.length;
+   const substitute=parts.map(p=>substitutedAbility(p.text)).find(Boolean);
+   let dice=importedBase===null?(sheet.abilities[substitute||stat]||0):importedBase,crit=10,attack=0,damageDice=0;let incomplete=effects.length!==combo.refs.length;
    let weaponAttack=false;
    const achievementTerms=[],attackTerms=[];
    for(const p of parts){const t=p.text;
