@@ -159,6 +159,7 @@
 <p class="hint">試作の段階：通常は100%未満／100%以上、起源種は80%未満／80%以上／100%以上。より高い段階は未対応です。武器未指定時は攻撃力の入力箇所を式に残します。</p>
 <button class="btn-go" id="convertText">テキストからコンボを生成</button>
 <label class="opt">条件の出力 <select id="textConditionMode"><option value="combined">条件をまとめる</option><option value="separate">条件別に分ける</option></select></label>
+<label class="opt"><input type="checkbox" id="textIncludeEncroachment" checked>命中式に侵蝕Bを入れる</label>
 <div id="conversionAlert" role="alert" hidden style="padding:16px;border:2px solid var(--warn);border-radius:9px;background:rgba(255,122,138,.14);color:var(--warn);font-weight:700;white-space:pre-wrap"></div>
 <textarea id="decorated" readonly placeholder="装飾チャパレ（1コンボ1行。文字の \n は送信時の改行）"></textarea>
 <button class="btn-ghost" id="copyDecorated">装飾チャパレをコピー</button>
@@ -210,6 +211,8 @@
 </div>
 <label>補足（任意・改行可）<textarea id="manualNotes" style="min-height:85px" placeholder="コンボ外効果や使用条件など"></textarea></label>
 <label>条件の出力<select id="manualConditionMode"><option value="combined">条件をまとめる</option><option value="separate">条件別に分ける</option></select></label>
+<label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="manualIncludeEncroachment" checked style="width:auto">命中式に侵蝕Bを入れる</label>
+<p class="hint">OFFの場合、ダイス欄に入力済みの侵蝕Bも命中式から外します。変更後は再生成してください。</p>
 <div class="actions"><button class="btn-go" id="manualGenerate">チャパレを生成</button><button class="btn-ghost" id="manualAppend">生成して出力末尾に追加</button></div>
 <label>チャパレ出力（編集可）<textarea id="manualOutput" spellcheck="false" style="min-height:200px"></textarea></label>
 <button class="btn-copy" id="manualCopy">手入力チャパレをコピー</button>
@@ -294,6 +297,12 @@ const TITLE_PRESETS=[
  [36,'⚡','⚡'],[37,'⌖','⌖'],[38,'⊹','⊹']
 ];
 function textDisplayWidth(text){return Array.from(text).reduce((n,c)=>n+(/[\u0020-\u007e\uff61-\uff9f]/.test(c)?1:2),0);}
+function hitDiceWithEncroachment(value,include=true){
+ let dice=String(value).trim().replace(/(?<!\{)侵蝕B(?!\})/g,'{侵蝕B}');
+ if(include)return dice.includes('{侵蝕B}')?dice:'{侵蝕B}'+(/^[+\-]/.test(dice)?'':'+')+dice;
+ dice=dice.replace(/[+\-]?\s*\{侵蝕B\}/g,'').replace(/^\s*\+/,'').replace(/\(\s*\+/g,'(').trim();
+ return dice||'0';
+}
 function groupPaletteByCondition(entries){
  const groups=new Map();
  for(const entry of entries){if(!groups.has(entry.condition))groups.set(entry.condition,[]);groups.get(entry.condition).push(entry.commands);}
@@ -574,7 +583,7 @@ function variableCost(effects,fallback){
  for(const e of effects){const cost=arithmetic(e.cost);if(cost===null)return fallback;if(/重ねて使用可能/.test(e.effect))variables.push(`(${displayEffectName(e.name)}×${cost})`);else fixed+=cost;}
  return [String(fixed),...variables].join('+');
 }
-function createTextPalette(sheet,rule,weapon,endDecoration='✿･･･････●･･･････✿･･･････●･･･････✿',startDecoration='✿･･･････○･･･････✿･･･････○･･･････✿',conditionMode='combined',titleLeft='◤',titleRight='◢'){
+function createTextPalette(sheet,rule,weapon,endDecoration='✿･･･････●･･･････✿･･･････●･･･････✿',startDecoration='✿･･･････○･･･････✿･･･････○･･･････✿',conditionMode='combined',titleLeft='◤',titleRight='◢',includeEncroachment=true){
  const origin=rule==='origin'||(rule==='auto'&&sheet.origin);const stages=origin?[{label:'80%未満',at:0,b:0},{label:'80%以上',at:80,b:1},{label:'100%以上',at:100,b:2}]:[{label:'100%未満',at:0,b:0},{label:'100%以上',at:100,b:1}];
  if(!origin&&sheet.combos.some(c=>/80[%％]以上/.test(c.condition))){stages[0].label='80%未満';stages.splice(1,0,{label:'80%以上',at:80,b:0});}
  const warnings=new Set(['試作：自然文の効果を完全には解釈できません。生成式と原文を照合し、未反映の補正は手入力してください。']),issueGroups=new Map(),lines=[],entries=[],seen=new Set(),groups=new Map();
@@ -625,7 +634,7 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
     if(/(?:攻撃力|ダメージ)[+＋]\s*[\[［]?使用している武器攻撃力/.test(t))weaponAttack=true;
    }
    const hit=weapon&&/^-?\d+$/.test(weapon.hit)?Number(weapon.hit):0;
-   rolls.push(`({侵蝕B}+${dice})DX${crit}${(sheet.skills[skill]||0)+hit>=0?'+':''}${(sheet.skills[skill]||0)+hit}${achievementTerms.map(t=>'+'+t).join('')} 【${shortComboName(combo.name)}／${stage.label}／命中判定】`);
+   rolls.push(`(${hitDiceWithEncroachment(dice,includeEncroachment)})DX${crit}${(sheet.skills[skill]||0)+hit>=0?'+':''}${(sheet.skills[skill]||0)+hit}${achievementTerms.map(t=>'+'+t).join('')} 【${shortComboName(combo.name)}／${stage.label}／命中判定】`);
    if(/白兵|射撃|RC|運転/.test(base)){
     const wa=weapon&&/^-?\d+$/.test(weapon.attack)?Number(weapon.attack):null;
     const attackTerm=weaponAttack?`(${attack}+使用している武器攻撃力)`:String(attack);
@@ -746,7 +755,7 @@ $('convertText').addEventListener('click',()=>{
  try{
  const sheet=applyFallingChild(readSheet($('sheetText').value),$('fallingChildTarget').value);const ix=$('weaponChoice').value;const weapon=selectedWeapon(sheet,ix,$('weaponHit').value,$('weaponAttack').value);
  refreshSingleEffects(sheet);
- const result=$('includeCombos').checked?createTextPalette(sheet,$('levelRule').value,weapon,$('comboEndDecoration').value,$('comboStartDecoration').value,$('textConditionMode').value,$('textTitleLeft').value,$('textTitleRight').value):{commands:'',issues:[],warnings:[],origin:$('levelRule').value==='origin'||($('levelRule').value==='auto'&&sheet.origin)};
+ const result=$('includeCombos').checked?createTextPalette(sheet,$('levelRule').value,weapon,$('comboEndDecoration').value,$('comboStartDecoration').value,$('textConditionMode').value,$('textTitleLeft').value,$('textTitleRight').value,$('textIncludeEncroachment').checked):{commands:'',issues:[],warnings:[],origin:$('levelRule').value==='origin'||($('levelRule').value==='auto'&&sheet.origin)};
  const indices=Array.from($('singleEffectList').querySelectorAll('input:checked')).map(input=>Number(input.value));
  const singles=createSingleEffectPalette(sheet,indices,$('levelRule').value,$('comboStartDecoration').value,$('comboEndDecoration').value,$('textConditionMode').value);
  result.commands=$('textConditionMode').value==='separate'?groupPaletteByCondition([...(result.entries||[]),...singles.entries]):[result.commands,singles.commands].filter(Boolean).join('\n\n');result.issues.push(...singles.issues);if(sheet.fallingChildUnresolved)result.issues.push('アイテム：《神の落し子》\n修正項目：Lv+2の対象エフェクト\n理由：アイテム説明から対象を特定できないため、Lv+2を未反映です。\n修正方法：「神の落し子の対象」で対象エフェクトを選択して再生成してください。');$('decorated').value=result.commands;
@@ -788,8 +797,7 @@ function generateManualCombo(data){
    [stage.dice?'ダイス'+manualSigned(stage.dice):'',stage.crit?'C値'+stage.crit:'',stage.achievement?'達成値'+manualSigned(stage.achievement):''],
    [stage.attack?'攻撃力'+manualSigned(stage.attack):'',stage.damageDice?'ダメージ'+manualSigned(stage.damageDice)+'D10':''],[stage.extra]));
   if(stage.dice){if(!stage.crit)throw new Error('ダイスを入力した行にはC値も入力してください。');
-   let dice=stage.dice.replace(/(?<!\{)侵蝕B(?!\})/g,'{侵蝕B}');
-   if(!dice.includes('{侵蝕B}'))dice='{侵蝕B}'+manualSigned(dice);
+   const dice=hitDiceWithEncroachment(stage.dice,data.includeEncroachment!==false);
    rolls.push(`(${dice})DX${stage.crit}${manualSigned(stage.achievement)} 【${data.name}／${stage.condition}／命中判定】`);
   }
   if(stage.attack||stage.damageDice)rolls.push(`(命中判定の十の位+1)D10${manualSigned(stage.damageDice?stage.damageDice+'D10':'')}${manualSigned(stage.attack)} 【${data.name}／${stage.condition}／ダメージ判定】`);
@@ -834,6 +842,7 @@ function readManualData(){
  const data={};for(const key of ['name','reading','effects','timing','skill','difficulty','target','range','cost','limit','top','bottom','titleLeft','titleRight','notes'])data[key]=$('manual'+key[0].toUpperCase()+key.slice(1)).value.trim();
  data.stages=Array.from($('manualStages').children).map(readManualStage);
  data.conditionMode=$('manualConditionMode').value;
+ data.includeEncroachment=$('manualIncludeEncroachment').checked;
  return data;
 }
 function previewManual(){ $('manualPreview').textContent=$('manualOutput').value.split('\n')[0].replace(/\\n/g,'\n'); }
