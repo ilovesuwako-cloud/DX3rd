@@ -123,7 +123,7 @@
   <header class="hero">
     <div class="eyebrow"><span class="dash"></span>YTSHEET → CCFOLIA &nbsp;·&nbsp; DX3rd</div>
     <h1>ゆとシート<span class="glyph">→</span>ココフォリア<br>完全版コンバーター</h1>
-    <p class="sub">ゆとシート（ダブルクロス3rd）のURLから、ステータス・基本判定・装飾コンボをまとめたココフォリア駒JSONを生成します。テキスト・txtファイルの読込、手入力のコンボ作成、単体エフェクトの出力、CRC用判定にも対応しています。</p>
+    <p class="sub">ゆとシート（ダブルクロス3rd）のURLから、ステータス・基本判定・装飾コンボをまとめたココフォリア駒JSONを生成します。手入力のコンボ作成、単体エフェクトの出力、CRC用判定にも対応しています。</p>
  
     <div class="steps">
       <div class="s"><span class="n">1</span>ゆとシートのURLを貼り付け</div>
@@ -140,9 +140,7 @@
 <label for="sheetUrl">ゆとシートURLから読み込む</label>
 <div class="controls"><input id="sheetUrl" type="url" placeholder="https://yutorize.work/ytsheet/dx3rd/?id=…" style="flex:1;min-width:220px;padding:12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px"><button class="btn-ghost" id="loadSheetUrl">URLを読み込む</button></div>
 <p class="hint" id="sheetUrlStatus" role="status">公開シートに対応。URLを読み込むと、装飾コンボ入りの駒JSONまで生成します。</p>
-<p class="hint">ゆとシートの「テキスト出力」を貼り付けます。コンボ欄の命中式から基礎ダイスを取得し、エフェクト情報から補正を計算します。生成したチャパレをコピーして使用できます。</p>
-<textarea id="sheetText" aria-label="ゆとシートのテキスト本文。txtファイルのドロップにも対応" placeholder="テキストを貼り付けるか、.txtファイルをここにドロップ&#10;&#10;キャラクター名：…&#10;■エフェクト■&#10;…&#10;■コンボ■"></textarea>
-<p class="hint" id="sheetFileStatus" role="status">.txtファイルを入力欄にドロップして読み込むこともできます。</p>
+<input type="hidden" id="loadedSheetText">
 <div id="fallingChildControls" hidden><label class="opt">神の落し子の対象<select id="fallingChildTarget"><option value="">自動判別（対象の記載がない場合は選択）</option></select></label><p class="hint">100%以上で、通常の侵蝕率補正に加えて選択エフェクトのLv+2。対象がアイテム説明に記載されていない場合はここで選択してください。デモンズシードの対象からは推測しません。</p></div>
 <div style="border:1px solid var(--line);border-radius:9px;padding:14px">
 <h3 style="margin:0 0 10px;font-size:14px">出力する単体エフェクト</h3>
@@ -465,7 +463,7 @@ function createSingleEffectPalette(sheet,indices,rule,top,bottom,mode){
  }
  return {commands:mode==='separate'?groupPaletteByCondition(entries):lines.join('\n'),issues,count:indices.length,entries};
 }
-function refreshSingleEffects(sheet=readSheet($('sheetText').value)){
+function refreshSingleEffects(sheet=readSheet($('loadedSheetText').value)){
  const list=$('singleEffectList');const same=list.dataset.character===sheet.name;
  const selected=new Set(same?Array.from(list.querySelectorAll('input:checked')).map(input=>input.dataset.key):[]);
  list.replaceChildren();list.dataset.character=sheet.name;
@@ -748,14 +746,14 @@ function createTextPalette(sheet,rule,weapon,endDecoration='✿･････�
  return {commands:conditionMode==='separate'?groupPaletteByCondition(entries):lines.join('\n'),warnings:[...warnings],issues,issueDetails,origin,entries};
 }
 function syncWeaponFields(){
- const sheet=readSheet($('sheetText').value),index=$('weaponChoice').value;
+ const sheet=readSheet($('loadedSheetText').value),index=$('weaponChoice').value;
  const weapon=index===''?null:sheet.weapons[Number(index)];
  $('weaponHit').value=weapon?.hit??'';$('weaponAttack').value=weapon?.attack??'';
  $('weaponHit').readOnly=Boolean(weapon?.effectLinked);$('weaponAttack').readOnly=Boolean(weapon?.effectLinked);
  $('weaponSelectionStatus').textContent=weapon?.effectLinked?`選択中：サイバーアーム（エフェクトLv${weapon.effectLevel}と連動）。命中修正：${weapon.hit||'読取不可'}／攻撃力：${weapon.attack||'読取不可'}。常時のため侵蝕率によるLv上昇は加えません。Lv変更後は再生成してください。`:weapon?`選択中：${weapon.name}。下の命中修正・攻撃力を確認してください。`:'武器を選択するか、命中修正・攻撃力を直接入力してください。';
 }
 function scanTextWeapons(){
- const sheet=readSheet($('sheetText').value),select=$('weaponChoice');
+ const sheet=readSheet($('loadedSheetText').value),select=$('weaponChoice');
  const previous=select.options?.[select.selectedIndex]?.textContent;
  select.replaceChildren(new Option('未指定（下の欄へ直接入力も可）',''));
  sheet.weapons.forEach((w,i)=>select.add(new Option(w.name,String(i))));
@@ -790,43 +788,14 @@ function setupTitlePresets(selectId,leftId,rightId){
  select.addEventListener('change',()=>{const match=TITLE_PRESETS.find(([number])=>String(number)===select.value);if(match){left.value=match[1];right.value=match[2];}});
  left.addEventListener('input',sync);right.addEventListener('input',sync);sync();
 }
-const sheetDrop=$('sheetText');
 let sheetFileLoad=0;
-function isFileDrag(event){return Array.from(event.dataTransfer?.types||[]).includes('Files');}
-function clearDropHighlight(){sheetDrop.style.removeProperty('border-color');sheetDrop.style.removeProperty('box-shadow');}
-sheetDrop.addEventListener('dragover',event=>{
- if(!isFileDrag(event))return;
- event.preventDefault();event.dataTransfer.dropEffect='copy';
- sheetDrop.style.borderColor='var(--volt)';sheetDrop.style.boxShadow='0 0 0 3px rgba(201,168,255,.2)';
-});
-sheetDrop.addEventListener('dragleave',clearDropHighlight);
-let effectListTimer;
-sheetDrop.addEventListener('input',()=>{sheetFileLoad++;invalidateCharacterOutput();$('sheetFileStatus').textContent='テキストを編集しました。';clearTimeout(effectListTimer);effectListTimer=setTimeout(()=>refreshSingleEffects(),200);});
-sheetDrop.addEventListener('drop',async event=>{
- if(!isFileDrag(event))return;
- event.preventDefault();clearDropHighlight();
- const files=Array.from(event.dataTransfer.files||[]);
- const report=message=>{$('sheetFileStatus').textContent=message;};
- if(files.length!==1){report('.txtファイルを1つずつドロップしてください。');return;}
- const file=files[0];
- if(!/\.txt$/i.test(file.name)){report('.txtファイルを選んでください。');return;}
- if(file.size>10*1024*1024){report('10MB以下の.txtファイルを選んでください。');return;}
- const request=++sheetFileLoad;
- report(`「${file.name}」を読み込み中…`);
- try{
-  const text=decodeTextFile(await file.arrayBuffer());
-  if(request!==sheetFileLoad)return;
-  sheetDrop.value=text;scanTextWeapons();
-  report(`「${file.name}」を読み込みました。「テキストからコンボを生成」を押してください。`);
- }catch(e){if(request===sheetFileLoad)report('ファイルの読み込みに失敗しました。再度ドロップするか、本文を貼り付けてください。');}
-});
 $('scanWeapons').addEventListener('click',scanTextWeapons);
 $('weaponChoice').addEventListener('change',syncWeaponFields);
 $('refreshEffectList').addEventListener('click',()=>refreshSingleEffects());
 for(const [id,checked] of [['effectSelectAll',true],['effectSelectNone',false]])$(id).addEventListener('click',()=>{for(const input of $('singleEffectList').querySelectorAll('input'))input.checked=checked;updateSingleEffectStatus();});
 $('convertText').addEventListener('click',()=>{
  try{
- const sheet=applyFallingChild(readSheet($('sheetText').value),$('fallingChildTarget').value);const ix=$('weaponChoice').value;const weapon=selectedWeapon(sheet,ix,$('weaponHit').value,$('weaponAttack').value);
+ const sheet=applyFallingChild(readSheet($('loadedSheetText').value),$('fallingChildTarget').value);const ix=$('weaponChoice').value;const weapon=selectedWeapon(sheet,ix,$('weaponHit').value,$('weaponAttack').value);
  refreshSingleEffects(sheet);
  const result=$('includeCombos').checked?createTextPalette(sheet,$('levelRule').value,weapon,$('comboEndDecoration').value,$('comboStartDecoration').value,$('textConditionMode').value,$('textTitleLeft').value,$('textTitleRight').value,$('textIncludeEncroachment').checked):{commands:'',issues:[],warnings:[],origin:$('levelRule').value==='origin'||($('levelRule').value==='auto'&&sheet.origin)};
  const indices=Array.from($('singleEffectList').querySelectorAll('input:checked')).map(input=>Number(input.value));
@@ -974,16 +943,14 @@ $('loadSheetUrl').addEventListener('click',async()=>{
  button.disabled=true;invalidateCharacterOutput('URLからシートを読み込み中です。');status.textContent='シートを読み込み中…';const request=++sheetFileLoad;
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
  try{
-  const paletteUrl=new URL(url);paletteUrl.searchParams.set('mode','palette');paletteUrl.searchParams.set('tool','bcdice');paletteUrl.searchParams.set('propertiesall','1');
-  const responses=await Promise.all([url,paletteUrl.href].map(address=>fetch(address,{mode:'cors',credentials:'omit',signal:controller.signal})));
-  for(const response of responses)if(!response.ok)throw new Error('取得できません（HTTP '+response.status+'）。');
-  const [raw,palette]=await Promise.all([responses[0].json(),responses[1].text()]);
-  if(/<!doctype|<html/i.test(palette))throw new Error('元のチャットパレットを取得できませんでした。');
+  const response=await fetch(url,{mode:'cors',credentials:'omit',signal:controller.signal});
+  if(!response.ok)throw new Error('取得できません（HTTP '+response.status+'）。');
+  const raw=await response.json();
   const text=sheetJsonToText(raw);
   if(request!==sheetFileLoad){status.textContent='入力が変更されたため読込の反映を中止しました。';return;}
-  rememberCharacterSource(officialCharacterFromSheet(raw,palette,url.replace(/&mode=json/,'')),text);
-  $('sheetText').value=text;const sheet=scanTextWeapons();$('convertText').click();status.textContent=`「${sheet.name}」を読み込み、装飾コンボ入りの駒JSONを生成しました。設定を変えた場合は再生成してください。`;$('sheetFileStatus').textContent='URLから取得したデータを反映しました。';
- }catch(e){status.textContent=(e.name==='AbortError'?'読込がタイムアウトしました。':e.message)+' 読み込めない場合はテキスト貼り付け・txtドロップを使用してください。';}
+  rememberCharacterSource(officialCharacterFromSheet(raw,'',url.replace(/&mode=json/,'')),text);
+  $('loadedSheetText').value=text;const sheet=scanTextWeapons();$('convertText').click();status.textContent=`「${sheet.name}」を読み込み、装飾コンボ入りの駒JSONを生成しました。設定を変えた場合は再生成してください。`;
+ }catch(e){status.textContent=(e.name==='AbortError'?'読込がタイムアウトしました。':e.message)+' URLと公開設定を確認し、時間をおいて再度読み込んでください。';}
  finally{clearTimeout(timeout);button.disabled=false;}
 });
 $('sheetUrl').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();$('loadSheetUrl').click();}});
@@ -1049,6 +1016,10 @@ function buildCharacterToken(sheet,meta,commands,options={}){
 function officialCharacterFromSheet(raw,palette,url){
  const params=[],lines=[];
  for(const line of palette.split(/\r?\n/)){const m=line.match(/^\/\/(.+)=([0-9+\-/*]+)?$/);if(m)params.push({label:m[1],value:m[2]??''});else lines.push(line);}
+ if(!palette){
+  const sheet=readSheet(sheetJsonToText(raw));
+  for(const [label,value] of [...Object.entries(sheet.abilities),...Object.entries(sheet.skills)])params.push({label,value:String(value)});
+ }
  const status=[];
  for(const row of raw.unitStatus||[])for(const [label,value] of Object.entries(row)){
   if(label==='行動')continue;
@@ -1102,10 +1073,10 @@ function invalidateCharacterOutput(message='シートの内容が変わりまし
 }
 function updateCharacterOutput(){
  try{
-  const sheet=readSheet($('sheetText').value);if(!$('sheetText').value.trim())throw new Error('URLを読み込むか、シート本文を入力してください。');
-  const meta=tokenMetadataFromText($('sheetText').value,sheet);
+  const sheet=readSheet($('loadedSheetText').value);if(!$('loadedSheetText').value.trim())throw new Error('先にゆとシートURLを読み込んでください。');
+  const meta=tokenMetadataFromText($('loadedSheetText').value,sheet);
   const supplied=$('originalCharacterJson').value.trim();
-  const sourceToken=supplied?JSON.parse(supplied):(importedCharacterSource?.text===$('sheetText').value?importedCharacterSource.token:null);
+  const sourceToken=supplied?JSON.parse(supplied):(importedCharacterSource?.text===$('loadedSheetText').value?importedCharacterSource.token:null);
   const token=buildCharacterToken(sheet,meta,$('decorated').value,{sourceToken,basic:$('tokenBasic').checked,fear:$('tokenFear').checked,skillBlank:$('tokenSkillBlank').checked,includeEncroachment:$('textIncludeEncroachment').checked,manualCommands:$('tokenIncludeManual').checked?$('manualOutput').value:''});
   $('characterOutput').value=JSON.stringify(token,null,2);
   $('characterSummary').textContent=`${token.data.name} ／ HP ${meta.hp.value}/${meta.hp.max} ／ 侵蝕 ${meta.encroachment} ／ 行動値 ${meta.initiative} ／ ロイス ${meta.lois.value}/${meta.lois.max} ／ 財産 ${meta.fortune.value}`;
@@ -1113,7 +1084,7 @@ function updateCharacterOutput(){
  }catch(e){$('characterOutput').value='';$('characterStatus').textContent=e.message;}
 }
 $('refreshCharacter').addEventListener('click',updateCharacterOutput);
-for(const id of ['originalCharacterJson','tokenBasic','tokenFear','tokenSkillBlank','tokenIncludeManual'])$(id).addEventListener('change',()=>{if($('sheetText').value.trim())updateCharacterOutput();});
+for(const id of ['originalCharacterJson','tokenBasic','tokenFear','tokenSkillBlank','tokenIncludeManual'])$(id).addEventListener('change',()=>{if($('loadedSheetText').value.trim())updateCharacterOutput();});
 $('copyCharacter').addEventListener('click',async()=>{
  if(!$('characterOutput').value){$('characterStatus').textContent='先にURL読込または駒JSON生成を実行してください。';return;}
  try{await navigator.clipboard.writeText($('characterOutput').value);$('characterStatus').textContent='駒JSONをコピーしました。ココフォリア盤面でCtrl+Vを押してください。';}
