@@ -167,7 +167,7 @@
 <section class="card" id="manualCombo" style="margin-top:22px">
 <h2>手入力でコンボを作成</h2>
 <div class="body">
-<p class="hint">タイミング・技能・難易度・対象・射程・侵蝕値・制限は候補選択と自由入力に対応しています。候補にない値もそのまま入力できます。数値・式は入力した内容を使います。ダイスには侵蝕B込みの式（例：4+侵蝕B）、攻撃力には追加ダイスも入力できます（例：11+3D10）。</p>
+<p class="hint">タイミング・技能・難易度・対象・射程・侵蝕値・制限は候補選択と自由入力に対応しています。候補にない値もそのまま入力できます。数値・式は入力した内容を使います。命中式には侵蝕Bを自動追加します（入力済みなら重複しません）。ダイスは数値や式で入力でき、攻撃力には追加ダイスも入力できます（例：11+3D10）。</p>
 <style>
 #manualCombo .manual-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
 #manualCombo label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text-dim)}
@@ -788,7 +788,8 @@ function generateManualCombo(data){
    [stage.dice?'ダイス'+manualSigned(stage.dice):'',stage.crit?'C値'+stage.crit:'',stage.achievement?'達成値'+manualSigned(stage.achievement):''],
    [stage.attack?'攻撃力'+manualSigned(stage.attack):'',stage.damageDice?'ダメージ'+manualSigned(stage.damageDice)+'D10':''],[stage.extra]));
   if(stage.dice){if(!stage.crit)throw new Error('ダイスを入力した行にはC値も入力してください。');
-   const dice=stage.dice.replace(/(?<!\{)侵蝕B(?!\})/g,'{侵蝕B}');
+   let dice=stage.dice.replace(/(?<!\{)侵蝕B(?!\})/g,'{侵蝕B}');
+   if(!dice.includes('{侵蝕B}'))dice='{侵蝕B}'+manualSigned(dice);
    rolls.push(`(${dice})DX${stage.crit}${manualSigned(stage.achievement)} 【${data.name}／${stage.condition}／命中判定】`);
   }
   if(stage.attack||stage.damageDice)rolls.push(`(命中判定の十の位+1)D10${manualSigned(stage.damageDice?stage.damageDice+'D10':'')}${manualSigned(stage.attack)} 【${data.name}／${stage.condition}／ダメージ判定】`);
