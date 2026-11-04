@@ -116,6 +116,104 @@
 .crc-switch:has(input:checked){border-color:#5ee5bf;background:#10382f}.crc-switch input:checked~.crc-track{background:#178268}.crc-switch input:checked~.crc-track:after{transform:translateX(22px)}.crc-switch input:checked~.crc-state{background:#5ee5bf;color:#082a21}.crc-switch input:checked~.crc-state:after{content:"ON"}
 .crc-switch:has(input:focus-visible){outline:3px solid #ffe249;outline-offset:4px}
 @media(max-width:480px){.crc-switch{gap:10px;padding:14px}.crc-copy strong{font-size:14px}.crc-copy small{font-size:11px}}
+</style><style id="converter-layout-style">.converter-workspace {
+ display:grid;
+ grid-template-columns:minmax(290px, .82fr) minmax(0, 1.6fr);
+ gap:16px;
+ padding:0 18px 18px;
+ align-items:start;
+}
+.converter-settings,.converter-preview {
+ min-width:0;
+ display:flex;
+ flex-direction:column;
+ gap:12px;
+ padding:16px;
+ border:1px solid #303d51;
+ border-radius:12px;
+ background:#192231;
+}
+.converter-workspace h3,.converter-workspace h4 { margin:0; }
+.converter-workspace h3 { font-size:19px; }
+.decoration-settings {
+ display:flex;
+ flex-direction:column;
+ gap:10px;
+ padding:14px;
+ border:1px solid #7562c8;
+ border-radius:10px;
+ background:#242441;
+}
+.decoration-settings h4 { color:#e1d8ff; font-size:17px; }
+.converter-settings .opt { flex-wrap:wrap; }
+.converter-settings .opt:has(select) { justify-content:space-between; }
+.converter-settings select { min-width:0; max-width:100%; min-height:34px; padding:4px 7px; color:#f3f7ff; background:#192231; border:1px solid #536079; border-radius:6px; }
+.converter-settings input:not([type=checkbox]) { max-width:100%; }
+.converter-disclosure {
+ border:1px solid #39465c;
+ border-radius:8px;
+ padding:0 10px;
+}
+.converter-workspace summary { cursor:pointer; padding:10px 0; }
+.converter-stack { display:grid; min-width:0; gap:10px; padding-bottom:10px; }
+.converter-preview textarea { min-height:270px; }
+.converter-copy { display:flex; flex-wrap:wrap; gap:8px; }
+.converter-mobile-jump { display:none; }
+.converter-workspace .btn-go { background:#684dce; border-color:#9b85ec; color:#fff; box-shadow:none; }
+.converter-settings input[type=checkbox] { flex-shrink:0; }
+#converterPreview { scroll-margin-top:12px; }
+#singleEffectList { grid-template-columns:minmax(0,1fr)!important; }
+@media (max-width:760px), (max-width:1000px) and (pointer:coarse) {
+ .wrap { padding:16px 12px 48px; }
+ header.hero { padding:16px; }
+ header.hero .steps { display:none; }
+ .converter-workspace { grid-template-columns:minmax(0,1fr); gap:12px; padding:0 10px 10px; }
+ .converter-settings,.converter-preview { padding:12px; }
+ .converter-url { display:grid; grid-template-columns:minmax(0,1fr); }
+ .converter-url #sheetUrl { min-width:0!important; width:100%; font-size:16px; }
+ .converter-url button,.converter-settings button,.converter-copy button { min-height:44px; }
+ .converter-settings select,.converter-settings input:not([type=checkbox]),.converter-preview textarea { font-size:16px; }
+ .converter-settings summary,.converter-preview summary { min-height:44px; }
+ .converter-copy { display:grid; grid-template-columns:minmax(0,1fr); }
+ .converter-mobile-jump { display:block; text-align:center; padding:10px; color:#d6c8ff; }
+ .converter-preview textarea { min-height:220px; }
+}
+
+.converter-tabs {
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:8px;
+ margin:18px 0 0;
+ padding:6px;
+ border:1px solid #3f4d67;
+ border-radius:12px;
+ background:#192231;
+}
+.converter-tabs button {
+ min-width:0;
+ min-height:68px;
+ padding:9px 8px;
+ color:#d7e1f3;
+ background:#232f43;
+ border-bottom:4px solid transparent;
+}
+.converter-tabs button:hover { background:#303c55; }
+.converter-tabs button[aria-selected="true"] {
+ color:white;
+ background:#493793;
+ border-bottom-color:#cfbbff;
+}
+.converter-tabs strong,.converter-tabs small { display:block; }
+.converter-tabs strong { font-size:17px; }
+.converter-tabs small { margin-top:2px; font-size:12px; font-weight:400; }
+.converter-tabs button:focus-visible { outline:2px solid #e2d7ff; outline-offset:2px; }
+@media (max-width:760px), (max-width:1000px) and (pointer:coarse) {
+ .converter-tabs { margin-top:12px; }
+ .converter-tabs strong { font-size:15px; }
+ .converter-tabs small { font-size:11px; }
+ #manualCombo input:not([type=checkbox]),#manualCombo select,#manualCombo textarea { font-size:16px; }
+ #manualCombo button { min-height:44px; }
+}
 </style></head>
 <body>
 <div class="wrap">
@@ -134,13 +232,40 @@
     </div>
   </header>
  
-  <section class="card" style="margin-top:22px">
-<h2>キャラクター読込・装飾コンボ設定</h2>
+  <!-- converter-app -->
+<div class="converter-tabs" role="tablist" aria-label="作成方法">
+ <button type="button" id="converterUrlTab" role="tab" aria-selected="true" aria-controls="converterUrlPanel"><strong>URLから変換</strong><small>ゆとシートから駒を作る</small></button>
+ <button type="button" id="converterManualTab" role="tab" aria-selected="false" aria-controls="converterManualPanel" tabindex="-1"><strong>手入力で作成</strong><small>コンボを入力してチャパレを作る</small></button>
+</div>
+<div id="converterUrlPanel" role="tabpanel" aria-labelledby="converterUrlTab">
+<section class="card" style="margin-top:22px">
+<h2>キャラクター読込</h2>
 <div class="body">
 <label for="sheetUrl">ゆとシートURLから読み込む</label>
-<div class="controls"><input id="sheetUrl" type="url" placeholder="https://yutorize.work/ytsheet/dx3rd/?id=…" style="flex:1;min-width:220px;padding:12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px"><button class="btn-ghost" id="loadSheetUrl">URLを読み込む</button></div>
+<div class="controls converter-url"><input id="sheetUrl" type="url" placeholder="https://yutorize.work/ytsheet/dx3rd/?id=…" style="flex:1;min-width:220px;padding:12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px"><button class="btn-ghost" id="loadSheetUrl">URLを読み込む</button></div>
 <p class="hint" id="sheetUrlStatus" role="status">公開シートに対応。URLを読み込むと、装飾コンボ入りの駒JSONまで生成します。</p>
 <input type="hidden" id="loadedSheetText">
+<a class="converter-mobile-jump" href="#converterPreview">プレビュー・コピーへ ↓</a>
+</div>
+<div class="converter-workspace">
+ <section class="converter-settings" aria-labelledby="outputSettingsHeading">
+  <h3 id="outputSettingsHeading">出力設定</h3>
+  <div class="decoration-settings">
+   <h4>装飾</h4>
+<label class="opt">装飾テンプレート<select id="textDecorationPreset" aria-label="装飾テンプレート"></select></label>
+<p class="hint">テンプレートを選ぶと上下の装飾を変更します。選択後も下の欄で自由に編集できます。</p>
+<label class="opt">コンボ名の装飾セット<select id="textTitlePreset"></select></label>
+<details><summary>装飾を細かく調整</summary><div class="converter-stack">
+<div class="controls"><label>コンボ名の左装飾<input id="textTitleLeft" list="comboTitleLeftOptions" value="◤" autocomplete="off"></label><label>コンボ名の右装飾<input id="textTitleRight" list="comboTitleRightOptions" value="◢" autocomplete="off"></label></div>
+<label for="comboStartDecoration" style="font-size:12.5px;color:var(--text-dim)">コンボ上側の装飾（空欄で省略）</label>
+<input type="text" id="comboStartDecoration" value="✿･･･････○･･･････✿･･･････○･･･････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
+<label for="comboEndDecoration" style="font-size:12.5px;color:var(--text-dim)">コンボ下側の装飾（空欄で省略）</label>
+<input type="text" id="comboEndDecoration" value="✿･･･････●･･･････✿･･･････●･･･････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
+</div></details>
+  </div>
+<label class="opt">条件の出力 <select id="textConditionMode"><option value="combined">条件をまとめる</option><option value="separate">条件別に分ける</option></select></label>
+<label class="opt"><input type="checkbox" id="textIncludeEncroachment" checked>命中式に侵蝕Bを入れる</label>
+<details class="converter-disclosure"><summary>武器・単体エフェクト</summary><div class="converter-stack">
 <div id="fallingChildControls" hidden><label class="opt">神の落し子の対象<select id="fallingChildTarget"><option value="">自動判別（対象の記載がない場合は選択）</option></select></label><p class="hint">100%以上で、通常の侵蝕率補正に加えて選択エフェクトのLv+2。対象がアイテム説明に記載されていない場合はここで選択してください。デモンズシードの対象からは推測しません。</p></div>
 <div style="border:1px solid var(--line);border-radius:9px;padding:14px">
 <h3 style="margin:0 0 10px;font-size:14px">出力する単体エフェクト</h3>
@@ -156,32 +281,34 @@
 <p class="hint">武器の指定は上の「使用武器」です。選択すると、下の命中修正・攻撃力を全攻撃コンボの式に反映します。候補にない作成武器や素手も直接入力できます。</p>
 <div class="controls"><label>武器の命中修正<input id="weaponHit" inputmode="text" placeholder="例：0、-1"></label><label>武器の攻撃力<input id="weaponAttack" inputmode="text" placeholder="例：4、8"></label></div>
 <p class="hint" id="weaponSelectionStatus" role="status">武器を選択するか、命中修正・攻撃力を直接入力してください。変更後は再生成してください。</p>
-<label class="opt">装飾テンプレート<select id="textDecorationPreset" aria-label="装飾テンプレート"></select></label>
-<p class="hint">テンプレートを選ぶと上下の装飾を変更します。選択後も下の欄で自由に編集できます。</p>
-<label class="opt">コンボ名の装飾セット<select id="textTitlePreset"></select></label>
-<div class="controls"><label>コンボ名の左装飾<input id="textTitleLeft" list="comboTitleLeftOptions" value="◤" autocomplete="off"></label><label>コンボ名の右装飾<input id="textTitleRight" list="comboTitleRightOptions" value="◢" autocomplete="off"></label></div>
-<label for="comboStartDecoration" style="font-size:12.5px;color:var(--text-dim)">コンボ上側の装飾（空欄で省略）</label>
-<input type="text" id="comboStartDecoration" value="✿･･･････○･･･････✿･･･････○･･･････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
-<label for="comboEndDecoration" style="font-size:12.5px;color:var(--text-dim)">コンボ下側の装飾（空欄で省略）</label>
-<input type="text" id="comboEndDecoration" value="✿･･･････●･･･････✿･･･････●･･･････✿" style="width:100%;padding:10px 12px;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:7px;font-family:var(--mono)">
-<p class="hint">試作の段階：通常は100%未満／100%以上、起源種は80%未満／80%以上／100%以上。より高い段階は未対応です。武器未指定時は攻撃力の入力箇所を式に残します。</p>
-<button class="btn-go" id="convertText">装飾チャパレ・駒JSONを生成</button>
-<label class="opt">条件の出力 <select id="textConditionMode"><option value="combined">条件をまとめる</option><option value="separate">条件別に分ける</option></select></label>
-<label class="opt"><input type="checkbox" id="textIncludeEncroachment" checked>命中式に侵蝕Bを入れる</label>
-<div id="conversionAlert" role="alert" hidden style="padding:16px;border:2px solid var(--warn);border-radius:9px;background:rgba(255,122,138,.14);color:var(--warn);font-weight:700;white-space:pre-wrap"></div>
-<textarea id="decorated" readonly placeholder="装飾チャパレ（1コンボ1行。文字の \n は送信時の改行）"></textarea>
-<button class="btn-ghost" id="copyDecorated">装飾チャパレをコピー</button>
-<pre id="textWarnings" style="white-space:pre-wrap;color:var(--warn);font-size:12px"></pre>
-<h3>ココフォリア駒JSON</h3>
+</div></details>
+<details class="converter-disclosure"><summary>駒JSON・CRCの設定</summary><div class="converter-stack">
+
 <details><summary>元のココフォリア駒JSONを直接指定（任意）</summary><textarea id="originalCharacterJson" placeholder="URL読込では自動取得します。元の駒JSONを貼り付けた場合はこちらを優先します。" style="min-height:120px"></textarea></details>
 <div class="controls"><label class="opt"><input type="checkbox" id="tokenBasic" checked>基本判定を出力（能力値・技能）</label><label class="opt"><input type="checkbox" id="tokenSkillBlank" checked>専門技能の空欄行を追加</label><label class="opt"><input type="checkbox" id="tokenIncludeManual">下の手入力チャパレも追加</label></div>
 <label class="crc-switch"><input type="checkbox" id="tokenFear" role="switch" aria-label="CRC用判定を出力"><span class="crc-track" aria-hidden="true"></span><span class="crc-copy"><strong>CRC用判定を出力</strong><small>恐怖判定・魔術ロール・儀式ロールをまとめて切り替え</small></span><span class="crc-state" aria-hidden="true"></span></label>
+</div></details>
+<button class="btn-go" id="convertText">設定を反映して再生成</button>
+<a class="converter-mobile-jump" href="#converterPreview">プレビュー・コピーへ ↓</a>
+ </section>
+ <section class="converter-preview" id="converterPreview" aria-labelledby="previewHeading">
+  <h3 id="previewHeading">プレビュー</h3>
 <p id="characterSummary" class="hint"></p>
-<textarea id="characterOutput" readonly spellcheck="false" placeholder="URL読込または生成ボタンで、ステータス・基本判定・装飾コンボを含む駒JSONを生成します。"></textarea>
-<div class="actions"><button class="btn-copy" id="copyCharacter">駒JSONをコピー</button><button class="btn-ghost" id="refreshCharacter">現在のチャパレを駒JSONへ反映</button></div>
-<p id="characterStatus" role="status" class="hint">URLを読み込むだけで駒JSONまで生成します。コピー後、ココフォリア盤面をクリックしてCtrl+Vで配置してください。</p>
+<div class="actions converter-copy"><button class="btn-copy" id="copyCharacter">駒JSONをコピー</button><button class="btn-ghost" id="copyDecorated">装飾チャパレをコピー</button></div>
+<p id="characterStatus" role="status" class="hint">駒JSONをコピーしたら、ココフォリアの盤面に貼り付けてください。</p>
+<div id="conversionAlert" role="alert" hidden style="padding:16px;border:2px solid var(--warn);border-radius:9px;background:rgba(255,122,138,.14);color:var(--warn);font-weight:700;white-space:pre-wrap"></div>
+<label for="decorated">装飾チャパレ</label>
+<textarea id="decorated" readonly placeholder="装飾チャパレ（1コンボ1行。文字の \n は送信時の改行）"></textarea>
+<details class="converter-disclosure"><summary>駒JSONを見る</summary><div class="converter-stack">
+<textarea id="characterOutput" readonly spellcheck="false" placeholder="読み込み後に駒JSONを表示します。"></textarea>
+<button class="btn-ghost" id="refreshCharacter">現在のチャパレを駒JSONへ反映</button>
+</div></details>
+<details class="converter-disclosure"><summary>照合・生成の詳細</summary>
+<pre id="textWarnings" style="white-space:pre-wrap;color:var(--warn);font-size:12px"></pre></details>
+ </section>
 </div></section>
-<section class="card" id="manualCombo" style="margin-top:22px">
+</div>
+<div id="converterManualPanel" role="tabpanel" aria-labelledby="converterManualTab" hidden><section class="card" id="manualCombo" style="margin-top:22px">
 <h2>手入力でコンボを作成</h2>
 <div class="body">
 <p class="hint">タイミング・技能・難易度・対象・射程・侵蝕値・制限は候補選択と自由入力に対応しています。候補にない値もそのまま入力できます。数値・式は入力した内容を使います。命中式には侵蝕Bを自動追加します（入力済みなら重複しません）。ダイスは数値や式で入力でき、攻撃力には追加ダイスも入力できます（例：11+3D10）。</p>
@@ -244,7 +371,7 @@
 <datalist id="comboTitleLeftOptions"><option value="◤"></option><option value="◣"></option><option value="《"></option><option value="【"></option><option value="〈"></option><option value="『"></option><option value="「"></option><option value="〔"></option><option value="≪"></option><option value="✦"></option><option value="❖"></option><option value="◇"></option></datalist>
 <datalist id="comboTitleRightOptions"><option value="◢"></option><option value="◥"></option><option value="》"></option><option value="】"></option><option value="〉"></option><option value="』"></option><option value="」"></option><option value="〕"></option><option value="≫"></option><option value="✦"></option><option value="❖"></option><option value="◇"></option></datalist>
 </section>
-<footer>ゆとシート→ココフォリア 完全版コンバーター · Double Cross 3rd</footer></div><script>"use strict";
+</div><footer>ゆとシート→ココフォリア 完全版コンバーター · Double Cross 3rd</footer></div><script>"use strict";
 const $ = id => document.getElementById(id);
 const STAT_SKILLS = {肉体:["白兵","回避","運転"],感覚:["射撃","知覚","芸術"],精神:["RC","意志","知識"],社会:["交渉","調達","情報"]};
 
@@ -969,6 +1096,13 @@ function createTextPalette(sheet,rule,selectedWeapon,endDecoration='✿･･･
   if(!group.combos.has(combo))group.combos.set(combo,new Set());
   group.combos.get(combo).add(stage);
  };
+ const addMismatch=(combo,stage,field,message)=>{
+  warnings.add(message);
+  const prefix=`「${shortComboName(combo.name)}／${stage.label}」：`;
+  addIssue(combo.name,stage.label,'コンボ欄',field+'の相違（念のため確認）',message.slice(prefix.length),
+   'ツールが効果や補正を拾いきれず、シートの登録値と差が出ることがあります。',
+   'シートの数値と適用する効果を確認して、問題がなければそのまま使って大丈夫です。 ツール側の計算や表示に間違いがありそうなら、開発者のこむぎに報告やフィードバックをもらえると嬉しいです！');
+ };
  const isStoneCondition=combo=>/賢者の石/.test(combo.condition||'');
  for(const combo of sheet.combos){
  const registeredThreshold=Number(combo.condition?.match(/(\d+)[%％]以上/)?.[1]||0);
@@ -1070,11 +1204,11 @@ function createTextPalette(sheet,rule,selectedWeapon,endDecoration='✿･･･
      outputDice=String(registeredDice-embeddedBonus);
      warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：登録ダイス${registeredDice}個は、基礎計算${dice}個＋侵蝕B${embeddedBonus}個と一致。出力では固定の侵蝕Bを分離しました。`);
     }else if(registeredDice!==null&&registeredDice!==dice){
-     warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：ダイス数が相違しています。コンボ欄：${registeredDice}／能力値・エフェクト・アイテム計算（侵蝕Bなし）：${dice}${itemDetails}。出力はコンボ欄を優先しています。`);
+     addMismatch(combo,stage,'ダイス数',`「${shortComboName(combo.name)}／${stage.label}」：ダイス数が相違しています。コンボ欄：${registeredDice}／能力値・エフェクト・アイテム計算（侵蝕Bなし）：${dice}${itemDetails}。出力はコンボ欄を優先しています。`);
     }
     const knownAchievement=achievementTerms.every(term=>arithmetic(term)!==null);
     const achievement=(sheet.skills[skill]||0)+hit+achievementTerms.reduce((sum,term)=>sum+(arithmetic(term)||0),0);
-    if(knownAchievement&&sourceHit.fixed!==achievement)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：達成値が相違しています。コンボ欄：${sourceHit.fixed}／技能・エフェクト・アイテム計算：${achievement}${itemDetails}${prior?.hit?'（《'+prior.name+'》の命中'+(prior.hit>0?'+':'')+prior.hit+'を反映）':''}。出力はコンボ欄を優先しています。`);
+    if(knownAchievement&&sourceHit.fixed!==achievement)addMismatch(combo,stage,'達成値',`「${shortComboName(combo.name)}／${stage.label}」：達成値が相違しています。コンボ欄：${sourceHit.fixed}／技能・エフェクト・アイテム計算：${achievement}${itemDetails}${prior?.hit?'（《'+prior.name+'》の命中'+(prior.hit>0?'+':'')+prior.hit+'を反映）':''}。出力はコンボ欄を優先しています。`);
    }
    if(sourceHit)rolls.push(`(${hitDiceWithEncroachment(outputDice,includeEncroachment)})DX${sourceHit.critical}${sourceHit.fixed?sourceHit.fixed>0?'+'+sourceHit.fixed:String(sourceHit.fixed):''} 【${shortComboName(combo.name)}／${stage.label}／命中判定】`);
    else if(fallbackHit)rolls.push(`(${hitDiceWithEncroachment(fallbackHit.dice,includeEncroachment)})DX${fallbackHit.critical}${fallbackHit.fixed>=0?'+':''}${fallbackHit.fixed} 【${shortComboName(combo.name)}／${stage.label}／命中判定】`);
@@ -1094,7 +1228,7 @@ function createTextPalette(sheet,rule,selectedWeapon,endDecoration='✿･･･
      const source=attackTotals(registeredAttack);
      if(!weapon&&created.length>1)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：マイナーで作成する武器・ヴィークルが複数あります（${created.map(c=>'◤'+c.combo+'◢《'+c.name+'》攻撃力'+c.attack).join('／')}）。使用武器を選択してください。攻撃力はコンボ欄の${registeredAttack}で出力しています。`);
      else if(equipment.unresolved.length||attackTerms.length||weaponAttack||comparisonWeapon===null&&/白兵|射撃|運転/.test(base))warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：攻撃力はコンボ欄の${registeredAttack}を使用。武器未指定または可変効果のため、エフェクト計算との照合を完了できません。`);
-     else if(source&&source.fixed!==calculatedAttack)warnings.add(`「${shortComboName(combo.name)}／${stage.label}」：攻撃力が相違しています。コンボ欄：${source.fixed}／エフェクト計算：${calculatedAttack}${itemDetails}${weapon?.itemSource?'（一般欄：《'+weapon.itemSource+'》の素手攻撃力'+wa+'）':''}${priorBonus.notes.length?'（先行効果：'+priorBonus.notes.join('／')+'）':''}${constants.notes.length?'（常時：'+constants.notes.join('／')+'）':''}${prior?'（マイナー◤'+prior.combo+'◢で作成する《'+prior.name+'》の攻撃力'+prior.attack+'を加算）':''}。出力にはコンボ欄の${registeredAttack}を使用しています。`);
+     else if(source&&source.fixed!==calculatedAttack)addMismatch(combo,stage,'攻撃力',`「${shortComboName(combo.name)}／${stage.label}」：攻撃力が相違しています。コンボ欄：${source.fixed}／エフェクト計算：${calculatedAttack}${itemDetails}${weapon?.itemSource?'（一般欄：《'+weapon.itemSource+'》の素手攻撃力'+wa+'）':''}${priorBonus.notes.length?'（先行効果：'+priorBonus.notes.join('／')+'）':''}${constants.notes.length?'（常時：'+constants.notes.join('／')+'）':''}${prior?'（マイナー◤'+prior.combo+'◢で作成する《'+prior.name+'》の攻撃力'+prior.attack+'を加算）':''}。出力にはコンボ欄の${registeredAttack}を使用しています。`);
     }else{
      const computedWeapon=prior?prior.attack:wa;
      const constants=constantAttackBonus(sheet,combo,stage);
@@ -1209,7 +1343,7 @@ $('convertText').addEventListener('click',()=>{
  const singles=createSingleEffectPalette(sheet,indices,$('levelRule').value,$('comboStartDecoration').value,$('comboEndDecoration').value,$('textConditionMode').value);
  const stone=sagesStoneEntry(sheet,$('comboStartDecoration').value,$('comboEndDecoration').value);
  result.commands=$('textConditionMode').value==='separate'?groupPaletteByCondition([...(result.entries||[]),...singles.entries,...(stone?[stone]:[])]):[result.commands,singles.commands,stone?groupPaletteByCondition([stone]):''].filter(Boolean).join('\n\n');result.issues.push(...singles.issues);if(sheet.fallingChildUnresolved)result.issues.push('アイテム：《神の落し子》\n修正項目：Lv+2の対象エフェクト\n理由：アイテム説明から対象を特定できないため、Lv+2を未反映です。\n修正方法：「神の落し子の対象」で対象エフェクトを選択して再生成してください。');$('decorated').value=result.commands;
- const alert=$('conversionAlert');alert.hidden=result.issues.length===0;alert.textContent=result.issues.length?`⚠ 修正が必要です（${result.issues.length}項目）\nこのまま使用せず、該当箇所を確認・修正してください。\n\n${result.issues.join('\n\n')}`:'';
+ const alert=$('conversionAlert');alert.hidden=result.issues.length===0;alert.textContent=result.issues.length?`念のため確認（${result.issues.length}項目）\n気になる箇所をシートと見比べてみてください。\n\n${result.issues.join('\n\n')}`:'';
  $('textWarnings').textContent=[`Lv補正：${result.origin?'起源種':'通常'}／登録コンボ：${$('includeCombos').checked?sheet.combos.length:0}件／単体エフェクト：${singles.count}件（未登録の武器・ヴィークル作成を自動追加：${automaticIndices.length}件）`,...result.warnings].join('\n');
  updateCharacterOutput();
  }catch(e){invalidateCharacterOutput('変換に失敗しました。入力と警告を確認してください。');setStatus('テキスト変換に失敗：'+e.message,'err');}
@@ -1506,5 +1640,28 @@ $('copyCharacter').addEventListener('click',async()=>{
  try{await navigator.clipboard.writeText($('characterOutput').value);$('characterStatus').textContent='駒JSONをコピーしました。ココフォリア盤面でCtrl+Vを押してください。';}
  catch(e){$('characterOutput').focus();$('characterOutput').select();$('characterStatus').textContent='駒JSONを選択しました。Ctrl+Cでコピーしてください。';}
 });
+
+{
+ const tabs = [$('converterUrlTab'), $('converterManualTab')];
+ const panels = [$('converterUrlPanel'), $('converterManualPanel')];
+ function selectConverterTab(selectedIndex, moveFocus = false) {
+  tabs.forEach((tab, index) => {
+   const selected = index === selectedIndex;
+   tab.setAttribute('aria-selected', String(selected));
+   tab.tabIndex = selected ? 0 : -1;
+   panels[index].hidden = !selected;
+  });
+  if (moveFocus) tabs[selectedIndex].focus();
+ }
+ tabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => selectConverterTab(index));
+  tab.addEventListener('keydown', event => {
+   const destinations = {ArrowLeft: 1 - index, ArrowRight: 1 - index, Home: 0, End: 1};
+   if (!Object.hasOwn(destinations, event.key)) return;
+   event.preventDefault();
+   selectConverterTab(destinations[event.key], true);
+  });
+ });
+}
 
 </script></body></html>
